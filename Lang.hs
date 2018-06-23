@@ -1,24 +1,22 @@
 module Lang where
 
-type PrimName = String
-type Constant = String -- atom
-data Pattern v
+data Pattern c v
   = PWildcard
-  | PAlias (Pattern v) v
-  | PConstant Constant
-  | PApply (Pattern v) (Pattern v)
-data Case v = Case (Pattern v) (Expression v)
-data Cases v
-  = CSingle (Case v)
-  | CNext (Case v) (Cases v)
-data Expression v
-  = EConstant Constant
-  | EPrim PrimName
+  | PAlias (Pattern c v) v
+  | PConstant c
+  | PApply (Pattern c v) (Pattern c v)
+data Case p c v = Case (Pattern c v) (Expression p c v)
+data Cases p c v
+  = CSingle (Case p c v)
+  | CNext (Case p c v) (Cases p c v)
+data Expression p c v
+  = EConstant c
+  | EPrim p
   | EVariable v
-  | ELambda (Cases v)
-  | EApply (Expression v) (Expression v)
+  | ELambda (Cases p c v)
+  | EApply (Expression p c v) (Expression p c v)
 
-cases :: (Case v -> a) -> (Case v -> Cases v -> a) -> Cases v -> a
+cases :: (Case p c v -> a) -> (Case p c v -> Cases p c v -> a) -> Cases p c v -> a
 cases single next css = case css of
   CSingle cs -> single cs
   CNext cs css' -> next cs css'
