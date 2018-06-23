@@ -27,12 +27,12 @@ mergeEnvs = (++)
 interpretClosed :: (Eq v, Eq c) => (p -> Value p c v -> Value p c v) -> Expression p c v -> Value p c v
 interpretClosed evalPrim = flip interpret emptyEnv
   where
-    interpret expression enviroment = case expression of
-      EConstant constant -> VConstant constant
-      EPrim prim -> VPrim prim
-      EVariable var -> lookupEnv var enviroment
-      ELambda cases -> VClosure cases enviroment
-      EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
+    match pat value = case pat of
+      PWildcard -> return emptyEnv
+      PAlias aliasedPattern alias -> insertEnv alias value <$> match aliasedPattern value
+      PConstant pc | VConstant vc <- value, pc == vc -> return emptyEnv
+      PApply p1 p2 | VApply v1 v2 <- value -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
+      _ -> fail "pattern did not match"
 
     apply v1 v2 = case v1 of
       VConstant {} -> VApply v1 v2
@@ -47,9 +47,9 @@ interpretClosed evalPrim = flip interpret emptyEnv
               (\cs css' -> (cs, go css')) cs
             in maybe cont (interpret exp . flip mergeEnvs cenvironment) $ match pat v2
 
-    match pat value = case pat of
-      PWildcard -> return emptyEnv
-      PAlias aliasedPattern alias -> insertEnv alias value <$> match aliasedPattern value
-      PConstant pc | VConstant vc <- value, pc == vc -> return emptyEnv
-      PApply p1 p2 | VApply v1 v2 <- value -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
-      _ -> fail "pattern did not match"
+    interpret expression enviroment = case expression of
+      EConstant constant -> VConstant constant
+      EPrim prim -> VPrim prim
+      EVariable var -> lookupEnv var enviroment
+      ELambda cases -> VClosure cases enviroment
+      EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
