@@ -5,8 +5,8 @@ type Constant = String -- atom
 type VariableName = String
 data Pattern
   = PWildcard
-  | PConstant Constant
   | PAlias Pattern VariableName
+  | PConstant Constant
   | PApply Pattern Pattern
 data Case = Case Pattern Expression
 data Cases
