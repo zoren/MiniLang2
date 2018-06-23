@@ -65,18 +65,21 @@ evalPrim primName arg = case primName of
     _ -> error "atomEq got unexpected value"
   _ -> error "unknown prim"
 
+interpretCases varg cenviroment = go
+  where
+    go cs = let
+      (Case pat exp, cont) =
+        cases
+        (\cs -> (cs, error "pattern match not exhaustive"))
+        (\cs css' -> (cs, go css')) cs
+      in maybe cont (interpret exp) $ match pat cenviroment varg
+
 apply :: Value -> Value -> Value
 apply v1 v2 = case v1 of
   VConstant {} -> VApply v1 v2
   VApply {} -> VApply v1 v2
   VPrim primName -> evalPrim primName v2
-  VClosure ccases cenviroment -> go ccases
-    where
-      go cs = let
-        (Case pat exp, cont) = cases
-          (\cs -> (cs, error "pattern match not exhaustive"))
-          (\cs css' -> (cs, go css')) cs
-        in maybe cont (interpret exp) $ match pat cenviroment v2
+  VClosure ccases cenviroment -> interpretCases v2 cenviroment ccases
   
 interpret :: Expression -> Environment -> Value
 interpret expression enviroment =
