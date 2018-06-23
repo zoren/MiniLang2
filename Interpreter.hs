@@ -11,7 +11,7 @@ data Value p c v
   = VConstant c
   | VPrim p
   | VApply (Value p c v) (Value p c v)
-  | VClosure (Cases p c v) (Environment p c v)
+  | VClosure [Case p c v] (Environment p c v)
 
 emptyEnv :: Environment p c v
 emptyEnv = Map.empty
@@ -41,12 +41,9 @@ interpretClosed evalPrim = flip interpret emptyEnv
       VApply {} -> VApply v1 v2
       VClosure ccases cenvironment -> go ccases
         where
-          go cs = let
-            (Case pat exp, cont) =
-              cases
-              (\cs -> (cs, error "pattern match not exhaustive"))
-              (\cs css' -> (cs, go css')) cs
-            in maybe cont (interpret exp . flip mergeEnvs cenvironment) $ match pat v2
+          go [] = error "pattern match not exhaustive"
+          go (Case pat exp : ccases') =
+            maybe (go ccases') (interpret exp . flip mergeEnvs cenvironment) $ match pat v2
 
     interpret expression enviroment = case expression of
       EConstant constant -> VConstant constant
