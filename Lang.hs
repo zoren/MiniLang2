@@ -2,24 +2,23 @@ module Lang where
 
 type PrimName = String
 type Constant = String -- atom
-type VariableName = String
-data Pattern
+data Pattern v
   = PWildcard
-  | PAlias Pattern VariableName
+  | PAlias (Pattern v) v
   | PConstant Constant
-  | PApply Pattern Pattern
-data Case = Case Pattern Expression
-data Cases
-  = CSingle Case
-  | CNext Case Cases
-data Expression
+  | PApply (Pattern v) (Pattern v)
+data Case v = Case (Pattern v) (Expression v)
+data Cases v
+  = CSingle (Case v)
+  | CNext (Case v) (Cases v)
+data Expression v
   = EConstant Constant
   | EPrim PrimName
-  | EVariable VariableName
-  | ELambda Cases
-  | EApply Expression Expression
+  | EVariable v
+  | ELambda (Cases v)
+  | EApply (Expression v) (Expression v)
 
-cases :: (Case -> a) -> (Case -> Cases -> a) -> Cases -> a
+cases :: (Case v -> a) -> (Case v -> Cases v -> a) -> Cases v -> a
 cases single next css = case css of
   CSingle cs -> single cs
   CNext cs css' -> next cs css'
