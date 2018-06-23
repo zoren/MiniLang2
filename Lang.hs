@@ -33,6 +33,12 @@ data Value
   | VPrim PrimName
   | VClosure Cases Environment
 
+lookupEnv :: VariableName -> Environment -> Value
+lookupEnv var = fromMaybe (error "variable not bound in environment") . lookup var
+
+insertEnv :: VariableName -> Value -> Environment -> Environment
+insertEnv var val = (:) (var, val)
+
 match :: Pattern -> Environment -> Value -> Maybe Environment
 match pat enviroment value =
   case pat of
@@ -43,7 +49,7 @@ match pat enviroment value =
         _ -> Nothing
     PAlias aliasedPattern alias -> do
       env' <- match aliasedPattern enviroment value
-      return $ (alias, value) : (env' ++ enviroment)
+      return $ insertEnv alias value (env' ++ enviroment)
     PApply p1 p2 ->
       case value of
         VApply v1 v2 -> do
@@ -76,7 +82,7 @@ interpret :: Expression -> Environment -> Value
 interpret expression enviroment =
   case expression of
     EConstant constant -> VConstant constant
-    EVariable var -> fromMaybe (error "variable not bound in environment") $ lookup var enviroment
+    EVariable var -> lookupEnv var enviroment
     EPrim prim -> VPrim prim
     ELambda cases -> VClosure cases enviroment
     EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
