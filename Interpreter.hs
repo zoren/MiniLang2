@@ -28,12 +28,9 @@ match :: Pattern -> Value -> Maybe Environment
 match pat value = case pat of
   PWildcard -> Just []
   PAlias aliasedPattern alias -> insertEnv alias value <$> match aliasedPattern value
-  PConstant pc -> case value of
-    VConstant vc | pc == vc -> Just []
-    _ -> Nothing
-  PApply p1 p2 -> case value of
-    VApply v1 v2 -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
-    _ -> Nothing
+  PConstant pc | VConstant vc <- value, pc == vc -> Just []
+  PApply p1 p2 | VApply v1 v2 <- value -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
+  _ -> Nothing
 
 evalPrim :: PrimName -> Value -> Value
 evalPrim primName arg = case primName of
