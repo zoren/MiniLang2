@@ -2,10 +2,11 @@ module Interpreter (interpretClosed) where
 
 import Control.Monad (liftM2)
 import Data.Maybe (fromMaybe)
+import qualified Data.Map.Strict as Map
 
 import Lang
 
-type Environment p c v = [(v, Value p c v)]
+type Environment p c v = Map.Map v (Value p c v)
 data Value p c v
   = VConstant c
   | VPrim p
@@ -13,16 +14,16 @@ data Value p c v
   | VClosure (Cases p c v) (Environment p c v)
 
 emptyEnv :: Environment p c v
-emptyEnv = []
+emptyEnv = Map.empty
 
-lookupEnv :: (Eq v) => v -> Environment p c v -> Value p c v
-lookupEnv var = fromMaybe (error "variable not bound in environment") . lookup var
+lookupEnv :: (Ord v) => v -> Environment p c v -> Value p c v
+lookupEnv var = fromMaybe (error "variable not bound in environment") . Map.lookup var
 
-insertEnv :: v -> Value p c v -> Environment p c v -> Environment p c v
-insertEnv var val = (:) (var, val)
+insertEnv :: (Ord v) => v -> Value p c v -> Environment p c v -> Environment p c v
+insertEnv var val = Map.insert var val 
 
-mergeEnvs :: Environment p c v -> Environment p c v -> Environment p c v
-mergeEnvs = (++)
+mergeEnvs :: (Ord v) => Environment p c v -> Environment p c v -> Environment p c v
+mergeEnvs = Map.union
 
 interpretClosed :: (Ord v, Eq c) => (p -> Value p c v -> Value p c v) -> Expression p c v -> Value p c v
 interpretClosed evalPrim = flip interpret emptyEnv
