@@ -74,7 +74,7 @@ apply v1 v2 = case v1 of
           cases
           (\cs -> (cs, error "pattern match not exhaustive"))
           (\cs css' -> (cs, go css')) cs
-        in maybe cont (interpret exp) $ match pat v2
+        in maybe cont (\ patEnv -> interpret exp $ patEnv ++ cenviroment) $ match pat v2
   
 interpret :: Expression -> Environment -> Value
 interpret expression enviroment = case expression of
