@@ -24,7 +24,7 @@ insertEnv var val = (:) (var, val)
 mergeEnvs :: Environment p c v -> Environment p c v -> Environment p c v
 mergeEnvs = (++)
 
-interpretClosed :: (Eq v, Eq c) => (p -> Value p c v -> Value p c v) -> Expression p c v -> Value p c v
+interpretClosed :: (Ord v, Eq c) => (p -> Value p c v -> Value p c v) -> Expression p c v -> Value p c v
 interpretClosed evalPrim = flip interpret emptyEnv
   where
     match pat value = case pat of
