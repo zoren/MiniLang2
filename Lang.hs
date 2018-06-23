@@ -59,6 +59,19 @@ evalPrim primName arg = case primName of
     _ -> error "atomEq got unexpected value"
   _ -> error "unknown prim"
 
+apply :: Value -> Value -> Value
+apply v1 v2 = case v1 of
+  VConstant {} -> VApply v1 v2
+  VApply {} -> VApply v1 v2
+  VPrim primName -> evalPrim primName v2
+  VClosure ccases cenviroment -> go ccases
+    where
+      go cs = let
+        (Case pat exp, cont) = cases
+          (\cs -> (cs, error "pattern match not exhaustive"))
+          (\cs css' -> (cs, go css')) cs
+        in maybe cont (interpret exp) $ match pat cenviroment v2
+  
 interpret :: Expression -> Environment -> Value
 interpret expression enviroment =
   case expression of
@@ -66,17 +79,4 @@ interpret expression enviroment =
     EVariable var -> fromMaybe (error "variable not bound in environment") $ lookup var enviroment
     EPrim prim -> VPrim prim
     ELambda cases -> VClosure cases enviroment
-    EApply e1 e2 -> let
-      v1 = interpret e1 enviroment
-      v2 = interpret e2 enviroment
-      in case v1 of
-           VConstant {} -> VApply v1 v2
-           VApply {} -> VApply v1 v2
-           VPrim primName -> evalPrim primName v2
-           VClosure ccases cenviroment -> go ccases
-             where
-               go cs = let
-                 (Case pat exp, cont) = cases
-                   (\cs -> (cs, error "pattern match not exhaustive"))
-                   (\cs css' -> (cs, go css')) cs
-                 in maybe cont (interpret exp) $ match pat cenviroment v2
+    EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
