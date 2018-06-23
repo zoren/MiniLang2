@@ -1,4 +1,4 @@
-module Interpreter(interpretClosed) where
+module Interpreter (interpretClosed) where
 
 import Control.Monad (liftM2)
 import Data.Maybe (fromMaybe)
@@ -26,11 +26,11 @@ mergeEnvs = (++)
 
 match :: Pattern -> Value -> Maybe Environment
 match pat value = case pat of
-  PWildcard -> Just []
+  PWildcard -> return emptyEnv
   PAlias aliasedPattern alias -> insertEnv alias value <$> match aliasedPattern value
-  PConstant pc | VConstant vc <- value, pc == vc -> Just []
+  PConstant pc | VConstant vc <- value, pc == vc -> return emptyEnv
   PApply p1 p2 | VApply v1 v2 <- value -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
-  _ -> Nothing
+  _ -> fail "pattern did not match"
 
 evalPrim :: PrimName -> Value -> Value
 evalPrim primName arg = case primName of
@@ -45,14 +45,14 @@ apply v1 v2 = case v1 of
   VConstant {} -> VApply v1 v2
   VPrim primName -> evalPrim primName v2
   VApply {} -> VApply v1 v2
-  VClosure ccases cenviroment -> go ccases
+  VClosure ccases cenvironment -> go ccases
     where
       go cs = let
         (Case pat exp, cont) =
           cases
           (\cs -> (cs, error "pattern match not exhaustive"))
           (\cs css' -> (cs, go css')) cs
-        in maybe cont (\ patEnv -> interpret exp $ mergeEnvs patEnv cenviroment) $ match pat v2
+        in maybe cont (interpret exp . flip mergeEnvs cenvironment) $ match pat v2
 
 interpret :: Expression -> Environment -> Value
 interpret expression enviroment = case expression of
