@@ -1,3 +1,4 @@
+import Control.Monad (liftM2)
 import Data.Maybe (fromMaybe)
 
 type PrimName = String
@@ -14,8 +15,8 @@ data Cases
   | CNext Case Cases
 data Expression
   = EConstant Constant
-  | EVariable VariableName
   | EPrim PrimName
+  | EVariable VariableName
   | ELambda Cases
   | EApply Expression Expression
 
@@ -29,8 +30,8 @@ cases single next css = case css of
 type Environment = [(VariableName, Value)]
 data Value
   = VConstant Constant
-  | VApply Value Value
   | VPrim PrimName
+  | VApply Value Value
   | VClosure Cases Environment
 
 lookupEnv :: VariableName -> Environment -> Value
@@ -43,23 +44,15 @@ mergeEnvs :: Environment -> Environment -> Environment
 mergeEnvs = (++)
 
 match :: Pattern -> Value -> Maybe Environment
-match pat value =
-  case pat of
-    PWildcard -> Just []
-    PConstant pc ->
-      case value of
-        VConstant vc | pc == vc -> Just []
-        _ -> Nothing
-    PAlias aliasedPattern alias -> do
-      env' <- match aliasedPattern value
-      return $ insertEnv alias value env'
-    PApply p1 p2 ->
-      case value of
-        VApply v1 v2 -> do
-          env1 <- match p1 v1
-          env2 <- match p2 v2
-          return $ mergeEnvs env1 env2
-        _ -> Nothing
+match pat value = case pat of
+  PWildcard -> Just []
+  PConstant pc -> case value of
+    VConstant vc | pc == vc -> Just []
+    _ -> Nothing
+  PAlias aliasedPattern alias -> insertEnv alias value <$> match aliasedPattern value
+  PApply p1 p2 -> case value of
+    VApply v1 v2 -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
+    _ -> Nothing
 
 evalPrim :: PrimName -> Value -> Value
 evalPrim primName arg = case primName of
@@ -69,29 +62,24 @@ evalPrim primName arg = case primName of
     _ -> error "atomEq got unexpected value"
   _ -> error "unknown prim"
 
-findFirstMatchingCase css varg = go css
-  where
-    go cs = let
-      (Case pat exp, cont) =
-        cases
-        (\cs -> (cs, error "pattern match not exhaustive"))
-        (\cs css' -> (cs, go css')) cs
-      in maybe cont ((,) exp) $ match pat varg
-
 apply :: Value -> Value -> Value
 apply v1 v2 = case v1 of
   VConstant {} -> VApply v1 v2
-  VApply {} -> VApply v1 v2
   VPrim primName -> evalPrim primName v2
-  VClosure ccases cenviroment -> let
-    (body, env) = findFirstMatchingCase ccases v2
-    in interpret body $ mergeEnvs env cenviroment
+  VApply {} -> VApply v1 v2
+  VClosure ccases cenviroment -> go ccases
+    where
+      go cs = let
+        (Case pat exp, cont) =
+          cases
+          (\cs -> (cs, error "pattern match not exhaustive"))
+          (\cs css' -> (cs, go css')) cs
+        in maybe cont (interpret exp) $ match pat v2
   
 interpret :: Expression -> Environment -> Value
-interpret expression enviroment =
-  case expression of
-    EConstant constant -> VConstant constant
-    EVariable var -> lookupEnv var enviroment
-    EPrim prim -> VPrim prim
-    ELambda cases -> VClosure cases enviroment
-    EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
+interpret expression enviroment = case expression of
+  EConstant constant -> VConstant constant
+  EPrim prim -> VPrim prim
+  EVariable var -> lookupEnv var enviroment
+  ELambda cases -> VClosure cases enviroment
+  EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
