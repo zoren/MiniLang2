@@ -6,27 +6,28 @@ import qualified Data.Map.Strict as Map
 
 import Lang
 
-type Environment p c v = Map.Map v (Value p c v)
-data Value p c v
+type Environment c v = Map.Map v (Value c v)
+type PrimFunction c v = Value c v -> Value c v
+data Value c v
   = VConstant c
-  | VPrim p
-  | VApply (Value p c v) (Value p c v)
-  | VClosure [Case p c v] (Environment p c v)
+  | VPrim (PrimFunction c v)
+  | VApply (Value c v) (Value c v)
+  | VClosure [Case (PrimFunction c v) c v] (Environment c v)
 
-emptyEnv :: Environment p c v
+emptyEnv :: Environment c v
 emptyEnv = Map.empty
 
-lookupEnv :: (Ord v) => v -> Environment p c v -> Value p c v
+lookupEnv :: (Ord v) => v -> Environment c v -> Value c v
 lookupEnv var = fromMaybe (error "variable not bound in environment") . Map.lookup var
 
-insertEnv :: (Ord v) => v -> Value p c v -> Environment p c v -> Environment p c v
+insertEnv :: (Ord v) => v -> Value c v -> Environment c v -> Environment c v
 insertEnv var val = Map.insert var val 
 
-mergeEnvs :: (Ord v) => Environment p c v -> Environment p c v -> Environment p c v
+mergeEnvs :: (Ord v) => Environment c v -> Environment c v -> Environment c v
 mergeEnvs = Map.union
 
-interpretClosed :: (Ord v, Eq c) => (p -> Value p c v -> Value p c v) -> Program p c v -> Environment p c v
-interpretClosed evalPrim decls = interpretDecls decls
+interpretClosed :: (Ord v, Eq c) => Program (PrimFunction c v) c v -> Environment c v
+interpretClosed decls = interpretDecls decls
   where
     match pat value = case pat of
       PWildcard -> return emptyEnv
@@ -37,7 +38,7 @@ interpretClosed evalPrim decls = interpretDecls decls
 
     apply v1 v2 = case v1 of
       VConstant {} -> VApply v1 v2
-      VPrim primName -> evalPrim primName v2
+      VPrim primFunc -> primFunc v2
       VApply {} -> VApply v1 v2
       VClosure ccases cenvironment -> go ccases
         where
