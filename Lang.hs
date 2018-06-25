@@ -12,3 +12,6 @@ data Expression p c v
   | EVariable v
   | ELambda [Case p c v]
   | EApply (Expression p c v) (Expression p c v)
+data Declaration p c v
+  = ValueDeclaration (Pattern c v) (Expression p c v)
+type Program p c v = [Declaration p c v]

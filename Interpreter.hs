@@ -25,8 +25,8 @@ insertEnv var val = Map.insert var val
 mergeEnvs :: (Ord v) => Environment p c v -> Environment p c v -> Environment p c v
 mergeEnvs = Map.union
 
-interpretClosed :: (Ord v, Eq c) => (p -> Value p c v -> Value p c v) -> Expression p c v -> Value p c v
-interpretClosed evalPrim = flip interpret emptyEnv
+interpretClosed :: (Ord v, Eq c) => (p -> Value p c v -> Value p c v) -> Program p c v -> Environment p c v
+interpretClosed evalPrim decls = interpretDecls decls
   where
     match pat value = case pat of
       PWildcard -> return emptyEnv
@@ -51,3 +51,8 @@ interpretClosed evalPrim = flip interpret emptyEnv
       EVariable var -> lookupEnv var enviroment
       ELambda cases -> VClosure cases enviroment
       EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
+
+    interpretDecl env (ValueDeclaration pat exp) =
+      mergeEnvs (fromMaybe (error "value declaration") $ match pat $ interpret exp env) env
+
+    interpretDecls = foldl interpretDecl emptyEnv
