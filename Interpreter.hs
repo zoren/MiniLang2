@@ -21,7 +21,7 @@ lookupEnv :: (Ord v) => v -> Environment c v -> Value c v
 lookupEnv var = fromMaybe (error "variable not bound in environment") . Map.lookup var
 
 insertEnv :: (Ord v) => v -> Value c v -> Environment c v -> Environment c v
-insertEnv var val = Map.insert var val 
+insertEnv = Map.insert
 
 mergeEnvs :: (Ord v) => Environment c v -> Environment c v -> Environment c v
 mergeEnvs = Map.union

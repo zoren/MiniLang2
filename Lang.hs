@@ -2,7 +2,7 @@ module Lang where
 
 data Pattern c v
   = PWildcard
-  | PAlias (Pattern c v) v
+  | PAlias v (Pattern c v)
   | PConstant c
   | PApply (Pattern c v) (Pattern c v)
 data Case p c v = Case (Pattern c v) (Expression p c v)
