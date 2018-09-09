@@ -27,12 +27,12 @@ mergeEnvs :: (Ord v) => Environment c v -> Environment c v -> Environment c v
 mergeEnvs = Map.union
 
 interpretClosed :: (Ord v, Eq c) => Program (PrimFunction c v) c v -> Environment c v
-interpretClosed decls = interpretDecls decls
+interpretClosed = interpretDecls
   where
     match pat value = case pat of
       PWildcard -> return emptyEnv
-      PAlias aliasedPattern alias -> insertEnv alias value <$> match aliasedPattern value
       PConstant pc | VConstant vc <- value, pc == vc -> return emptyEnv
+      PAlias alias aliasedPattern -> insertEnv alias value <$> match aliasedPattern value
       PApply p1 p2 | VApply v1 v2 <- value -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
       _ -> fail "pattern did not match"
 
@@ -43,8 +43,8 @@ interpretClosed decls = interpretDecls decls
       VClosure ccases cenvironment -> go ccases
         where
           go [] = error "pattern match not exhaustive"
-          go (Case pat exp : ccases') =
-            maybe (go ccases') (interpret exp . flip mergeEnvs cenvironment) $ match pat v2
+          go (Case pat body : ccases') =
+            maybe (go ccases') (interpret body . flip mergeEnvs cenvironment) $ match pat v2
 
     interpret expression enviroment = case expression of
       EConstant constant -> VConstant constant
@@ -53,7 +53,7 @@ interpretClosed decls = interpretDecls decls
       ELambda cases -> VClosure cases enviroment
       EApply e1 e2 -> apply (interpret e1 enviroment) (interpret e2 enviroment)
 
-    interpretDecl env (ValueDeclaration pat exp) =
-      mergeEnvs (fromMaybe (error "value declaration") $ match pat $ interpret exp env) env
+    interpretDecl env (ValueDeclaration pat body) =
+      mergeEnvs (fromMaybe (error "value declaration") $ match pat $ interpret body env) env
 
     interpretDecls = foldl interpretDecl emptyEnv
