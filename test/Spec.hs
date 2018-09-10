@@ -1,15 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
-import HaskellStyleParser
-import Text.Megaparsec
-import Test.HUnit
-import Surface
-import Data.Text (Text)
-import Data.Maybe (fromMaybe)
+import           HaskellStyleParser
+import           Text.Megaparsec
+import           Test.HUnit
+import           Surface
+import           Data.Text (Text)
+import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
+import qualified Lang as L
+import           SurfaceToCore
+import           Interpreter
+
+unsafeParse parser t = fromMaybe (error $ "did not parse: " ++ T.unpack t) $ parseMaybe parser t
 
 testParser :: (Eq a, Show a) => Parser a -> Text -> a -> Test
 testParser parser t expected =
-  TestLabel (T.unpack t) $ TestCase (assertEqual (T.unpack t) (fromMaybe (error "did not parse") $ parseMaybe parser t) expected)
+  TestLabel (T.unpack t) $ TestCase (assertEqual (T.unpack t) (unsafeParse parser t) expected)
 
 pc = PConstant . UpperIdentifier
 pv = PVariable . LowerIdentifier
@@ -37,15 +42,40 @@ expressionTests =
   [ t "Nil" $ ec "Nil"
   , t "$fix" $ EPrim $ PrimIndentifier "fix"
   , t "x" $ ev "x"
-  , t "|x.x" $ ELambda [pv "x" `Case` ev "x"]
+  , t "\\x.x" $ ELambda [pv "x" `Case` ev "x"]
+  , t "\\x.x|y.y" $ ELambda [pv "x" `Case` ev "x"
+                            ,pv "y" `Case` ev "y"]
+  , t "\\x.S x" $ ELambda [pv "x" `Case` (EApply (ec "S") (ev "x"))]
   , t "f x" $ EApply (ev "f") $ ev "x"
   , t "f x y" $ ev "f" `EApply` ev "x" `EApply` ev "y"
   , t "( Nil )" $ EParenthesis $ ec "Nil"
   ]
 
+evalExpTests =
+  let
+    p = unsafeParse pexp
+    i t = interpret (L.mapPrim (error "no prim") $ convertExpression $ p t) emptyEnv
+    e e1 e2 = TestCase $ assertEqual ("") (i e2) (i e1)
+  in
+    TestList
+    [ e "(\\x.x)A" "A"
+    , e "(\\_.A)C" "A"
+    , e "(\\A.B)A" "B"
+    , e "(\\A.B|A.C)A" "B"
+    , e "(\\X.B|A.C)A" "C"
+    , e "(\\A.B|C.D)C" "D"
+    , e "(\\Some x.x)(Some A)" "A"
+    , e "(\\Cons x xs.x)(Cons A Nil)" "A"
+    , e "(\\Cons x xs.xs)(Cons A Nil)" "Nil"
+    , e "(\\Cons x _.x)(Cons A Nil)" "A"
+    , e "(\\Nil.None|Cons x _.Some x) Nil" "None"
+    , e "(\\Nil.None|Cons x _.Some x)(Cons A Nil)" "Some A"
+    ]
+
 tests = TestList
   [ patternTests
   , expressionTests
+  , evalExpTests
   ]
 
 main :: IO Counts

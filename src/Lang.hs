@@ -15,3 +15,13 @@ data Expression p c v
 data Declaration p c v
   = ValueDeclaration (Pattern c v) (Expression p c v)
 type Program p c v = [Declaration p c v]
+
+mapPrim :: (p -> p') -> Expression p c v -> Expression p' c v
+mapPrim f = go
+  where
+    go e = case e of
+      EConstant c -> EConstant c
+      EPrim p -> EPrim $ f p
+      EVariable v -> EVariable v
+      ELambda cases -> ELambda $ map (\(Case p e) -> Case p $ go e) cases
+      EApply e1 e2 -> EApply (go e1) (go e2)

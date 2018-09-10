@@ -58,10 +58,10 @@ pexp = foldl1 EApply <$> some eatom
     [ EConstant <$> upperId
     , EPrim <$> primId
     , EVariable <$> lowerId
-    , ELambda <$> some lcase
+    , ELambda <$ sym '\\' <*> sepBy1 lcase (sym '|')
     , EParenthesis <$ sym '(' <*> pexp <* sym ')'
     ]
-  lcase = Case <$ sym '|' <*> ppattern <* sym '.' <*> pexp
+  lcase = Case <$> ppattern <* sym '.' <*> pexp
 
 pdecl :: Parser Declaration
 pdecl = ValueDeclaration <$> ppattern <* sym '=' <*> pexp
