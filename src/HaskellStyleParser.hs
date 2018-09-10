@@ -1,40 +1,67 @@
 module HaskellStyleParser where
 
-import Data.Text (
-  Text,
-  )
-
-
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import           Text.Megaparsec.Expr
+import qualified Text.Megaparsec.Char.Lexer as L
 
-
+import Control.Monad (void)
 import           Data.Char (
   isAlphaNum,
   )
+import Data.Text (
+  Text,
+  )
 import qualified Data.Text as T
 import           Data.Void
-import Surface
+import           Surface
 
 type Parser a = Parsec Void Text a
 
-position :: Parser Position
-position = do
-  pos <- getPosition
-  return $ Position (unPos . sourceLine $ pos) (unPos . sourceColumn $ pos)
+sc :: Parser ()
+sc = L.space space1 empty empty
 
-ppos :: Parser a -> Parser (Located a)
-ppos p = Located <$> position <*> p <*> position
+lexeme :: Parser a -> Parser a
+lexeme = L.lexeme sc
 
 trailingChars :: Parser Text
 trailingChars = takeWhileP Nothing $ \c -> isAlphaNum c || c == '_'
 
-lowerId :: Parser Text
-lowerId = T.cons <$> lowerChar <*> trailingChars
+lowerId :: Parser LowerIdentifier
+lowerId = LowerIdentifier <$> lexeme (T.cons <$> lowerChar <*> trailingChars)
 
-upperId :: Parser Text
-upperId = T.cons <$> upperChar <*> trailingChars
+upperId :: Parser UpperIdentifier
+upperId = UpperIdentifier <$> lexeme (T.cons <$> upperChar <*> trailingChars)
 
-primId :: Parser Text
-primId = T.cons <$> char '$' *> trailingChars
+primId :: Parser PrimIndentifier
+primId = PrimIndentifier <$> lexeme (T.cons <$> char '$' *> trailingChars)
+
+sym :: Char -> Parser ()
+sym c = void $ lexeme $ char c
+
+ppattern :: Parser Pattern
+ppattern = foldl1 PApply <$> some patom
+  where
+    patom =
+      choice
+      [ PWildcard <$ sym '_'
+      , PConstant <$> upperId
+      , PParenthesis <$ sym '(' <*> ppattern <* sym ')'
+      , PVariable <$> lowerId
+      ]
+
+pexp :: Parser Expression
+pexp = foldl1 EApply <$> some eatom
+  where
+  eatom =
+    choice
+    [ EConstant <$> upperId
+    , EPrim <$> primId
+    , EVariable <$> lowerId
+    , ELambda <$> some lcase
+    , EParenthesis <$ sym '(' <*> pexp <* sym ')'
+    ]
+  lcase = Case <$ sym '|' <*> ppattern <* sym '.' <*> pexp
+
+pdecl :: Parser Declaration
+pdecl = ValueDeclaration <$> ppattern <* sym '=' <*> pexp
