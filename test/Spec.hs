@@ -45,17 +45,21 @@ expressionTests =
   , t "\\x.x" $ ELambda [pv "x" `Case` ev "x"]
   , t "\\x.x|y.y" $ ELambda [pv "x" `Case` ev "x"
                             ,pv "y" `Case` ev "y"]
-  , t "\\x.S x" $ ELambda [pv "x" `Case` (EApply (ec "S") (ev "x"))]
+  , t "\\x.S x" $ ELambda [pv "x" `Case` (ec "S" `EApply` ev "x")]
   , t "f x" $ EApply (ev "f") $ ev "x"
   , t "f x y" $ ev "f" `EApply` ev "x" `EApply` ev "y"
   , t "( Nil )" $ EParenthesis $ ec "Nil"
   ]
 
+fix :: (a -> a) -> a
+fix f = let {x = f x} in x
+
 evalExpTests =
   let
     p = unsafeParse pexp
-    i t = interpret (L.mapPrim (error "no prim") $ convertExpression $ p t) emptyEnv
-    e e1 e2 = TestCase $ assertEqual ("") (i e2) (i e1)
+    lfix = fix . apply
+    i t = interpret (L.mapPrim (\(PrimIndentifier "fix") -> lfix) $ convertExpression $ p t) emptyEnv
+    e e1 e2 = TestCase $ assertEqual "" (i e2) (i e1)
   in
     TestList
     [ e "(\\x.x)A" "A"
@@ -70,6 +74,7 @@ evalExpTests =
     , e "(\\Cons x _.x)(Cons A Nil)" "A"
     , e "(\\Nil.None|Cons x _.Some x) Nil" "None"
     , e "(\\Nil.None|Cons x _.Some x)(Cons A Nil)" "Some A"
+    , e "($fix \\r.\\Nil.Z|Cons _ xs.S(r xs))(Cons B (Cons A Nil))" "S(S Z)"
     ]
 
 tests = TestList
