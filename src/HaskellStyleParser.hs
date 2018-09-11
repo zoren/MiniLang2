@@ -2,10 +2,10 @@ module HaskellStyleParser where
 
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
-import           Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Char.Lexer as L
+import           Text.Megaparsec.Expr
 
-import Control.Monad (void)
+import           Control.Monad (void)
 import           Data.Char (
   isAlphaNum,
   )
@@ -18,8 +18,14 @@ import           Surface
 
 type Parser a = Parsec Void Text a
 
+lspace :: Parser () -> Parser ()
+lspace sp = L.space sp empty empty
+
+scn :: Parser ()
+scn = lspace space1
+
 sc :: Parser ()
-sc = L.space space1 empty empty
+sc = lspace $ void $ takeWhile1P Nothing $ \x -> x == ' ' || x == '\t'
 
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
@@ -65,3 +71,6 @@ pexp = foldl1 EApply <$> some eatom
 
 pdecl :: Parser Declaration
 pdecl = ValueDeclaration <$> ppattern <* sym '=' <*> pexp
+
+pprog :: Parser Program
+pprog = many $ L.nonIndented scn pdecl

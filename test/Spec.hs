@@ -52,6 +52,17 @@ expressionTests =
   , t "( Nil )" $ EParenthesis $ ec "Nil"
   ]
 
+programTests =
+  let
+    t = testParser pprog
+  in
+    TestList
+    [ t "" []
+    , t "x = Nil" [ValueDeclaration (pv "x") (ec "Nil")]
+    , t "x = A\ny = B" [ValueDeclaration (pv "x") (ec "A")
+                       ,ValueDeclaration (pv "y") (ec "B")]
+    ]
+
 evalExpTests =
   let
     p = unsafeParse pexp
@@ -78,6 +89,7 @@ evalExpTests =
 tests = TestList
   [ patternTests
   , expressionTests
+  , programTests
   , evalExpTests
   ]
 

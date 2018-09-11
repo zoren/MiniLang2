@@ -29,3 +29,5 @@ data Expression
   deriving (Eq, Show)
 data Declaration
   = ValueDeclaration Pattern Expression -- x = 5
+  deriving (Eq, Show)
+type Program = [Declaration]
