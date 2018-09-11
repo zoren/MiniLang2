@@ -3,8 +3,9 @@ import           HaskellStyleParser
 import           Text.Megaparsec
 import           Test.HUnit
 import           Surface
-import           Data.Text (Text)
+import           Data.Function (fix)
 import           Data.Maybe (fromMaybe)
+import           Data.Text (Text)
 import qualified Data.Text as T
 import qualified Lang as L
 import           SurfaceToCore
@@ -50,9 +51,6 @@ expressionTests =
   , t "f x y" $ ev "f" `EApply` ev "x" `EApply` ev "y"
   , t "( Nil )" $ EParenthesis $ ec "Nil"
   ]
-
-fix :: (a -> a) -> a
-fix f = let {x = f x} in x
 
 evalExpTests =
   let
