@@ -2,7 +2,6 @@ module SurfaceToCore where
 
 import Surface
 import qualified Lang as L
-import Data.Text (Text)
 
 convertPattern :: Pattern -> L.Pattern Identifier Identifier
 convertPattern p = case p of
@@ -20,3 +19,10 @@ convertExpression e = case e of
   ELambda cases -> L.ELambda $ map (\(Case p e') -> L.Case (convertPattern p) (convertExpression e')) cases
   EApply e1 e2 -> L.EApply (convertExpression e1) (convertExpression e2)
   EParenthesis e' -> convertExpression e'
+
+convert :: Program -> L.Expression PrimIndentifier Identifier Identifier
+convert [] = error "no decls"
+convert [ValueDeclaration p e] = case p of
+  PWildcard -> convertExpression e
+  _ -> error "could not convert"
+convert (ValueDeclaration p e:ds) = L.EApply (L.ELambda [L.Case (convertPattern p) (convert ds)]) $ convertExpression e

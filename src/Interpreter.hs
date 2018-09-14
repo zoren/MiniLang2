@@ -1,10 +1,12 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Interpreter where
 
-import Control.Monad (liftM2)
-import Data.Maybe (fromMaybe)
+import           Control.Monad (liftM2)
+import           Data.Function (fix)
 import qualified Data.Map.Strict as Map
-
-import Lang
+import           Data.Maybe (fromMaybe)
+import           Lang
+import Data.Text (Text)
 
 type Environment c v = Map.Map v (Value c v)
 type PrimFunction c v = Value c v -> Value c v
@@ -25,7 +27,7 @@ instance (Show c, Show v) => Show (Value c v) where
     show x = case x of
       VConstant c -> show c
       VPrim {} -> "<prim>"
-      VApply v1 v2 -> show v1 ++ " app " ++ show v2
+      VApply v1 v2 -> show v1 ++ " " ++ show v2
       VClosure {} -> "<closure>"
 
 emptyEnv :: Environment c v
@@ -40,6 +42,7 @@ insertEnv = Map.insert
 mergeEnvs :: (Ord v) => Environment c v -> Environment c v -> Environment c v
 mergeEnvs = Map.union
 
+match :: (Monad m, Ord v, Eq c) => Pattern c v -> Value c v -> m (Environment c v)
 match pat value = case pat of
   PWildcard -> return emptyEnv
   PConstant pc | VConstant vc <- value, pc == vc -> return emptyEnv
@@ -47,6 +50,7 @@ match pat value = case pat of
   PApply p1 p2 | VApply v1 v2 <- value -> liftM2 mergeEnvs (match p1 v1) (match p2 v2)
   _ -> fail "pattern did not match"
 
+apply :: (Ord v, Eq c) => Value c v -> Value c v -> Value c v
 apply v1 v2 = case v1 of
   VConstant {} -> VApply v1 v2
   VPrim primFunc -> primFunc v2
@@ -57,6 +61,7 @@ apply v1 v2 = case v1 of
       go (Case pat body : ccases') =
         maybe (go ccases') (interpret body . flip mergeEnvs cenvironment) $ match pat v2
 
+interpret :: (Ord v, Eq c) => Expression (PrimFunction c v) c v -> Environment c v -> Value c v
 interpret expression enviroment = case expression of
   EConstant constant -> VConstant constant
   EPrim prim -> VPrim prim
@@ -64,10 +69,11 @@ interpret expression enviroment = case expression of
   ELambda cases -> VClosure cases enviroment
   EApply e1 e2 -> interpret e1 enviroment `apply` interpret e2 enviroment
 
-interpretClosed :: (Ord v, Eq c) => Program (PrimFunction c v) c v -> Environment c v
-interpretClosed = interpretDecls
-  where
-    interpretDecl env (ValueDeclaration pat body) =
-      mergeEnvs (fromMaybe (error "value declaration") $ match pat $ interpret body env) env
+interpretClosedExp :: (Ord v, Eq c) => Expression (PrimFunction c v) c v -> Value c v
+interpretClosedExp e = interpret e emptyEnv
 
-    interpretDecls = foldl interpretDecl emptyEnv
+primMap :: Eq c => Text -> Value c Text -> Value c Text
+primMap name = case name of
+  "fix" -> fix . apply
+  _ -> error "prim not known"
+

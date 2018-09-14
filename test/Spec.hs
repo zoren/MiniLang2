@@ -3,7 +3,6 @@ import           HaskellStyleParser
 import           Text.Megaparsec
 import           Test.HUnit
 import           Surface
-import           Data.Function (fix)
 import           Data.Maybe (fromMaybe)
 import           Data.Text (Text)
 import qualified Data.Text as T
@@ -66,8 +65,7 @@ programTests =
 evalExpTests =
   let
     p = unsafeParse pexp
-    lfix = fix . apply
-    i t = interpret (L.mapPrim (\(PrimIndentifier "fix") -> lfix) $ convertExpression $ p t) emptyEnv
+    i t = interpret (L.mapPrim (\(PrimIndentifier name) -> primMap name) $ convertExpression $ p t) emptyEnv
     e e1 e2 = TestCase $ assertEqual "" (i e2) (i e1)
   in
     TestList
@@ -95,4 +93,3 @@ tests = TestList
 
 main :: IO Counts
 main = runTestTT tests
-
