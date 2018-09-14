@@ -9,6 +9,7 @@ import qualified Data.Text as T
 import qualified Lang as L
 import           SurfaceToCore
 import           Interpreter
+import           PrimEnv
 
 unsafeParse parser t = fromMaybe (error $ "did not parse: " ++ T.unpack t) $ parseMaybe parser t
 

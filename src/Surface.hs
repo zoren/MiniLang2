@@ -4,9 +4,17 @@ import Data.Text
 
 type Identifier = Text
 newtype LowerIdentifier = LowerIdentifier Identifier
-  deriving (Eq, Show)
+  deriving (Eq, Ord)
+
+instance Show LowerIdentifier where
+  show (LowerIdentifier name) = unpack name
+
 newtype UpperIdentifier = UpperIdentifier Identifier
-  deriving (Eq, Show)
+  deriving (Eq, Ord)
+
+instance Show UpperIdentifier where
+  show (UpperIdentifier name) = unpack name
+
 data Pattern
   = PWildcard -- _
   | PConstant UpperIdentifier -- Cons

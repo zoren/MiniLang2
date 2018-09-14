@@ -3,24 +3,24 @@ module SurfaceToCore where
 import Surface
 import qualified Lang as L
 
-convertPattern :: Pattern -> L.Pattern Identifier Identifier
+convertPattern :: Pattern -> L.Pattern UpperIdentifier LowerIdentifier
 convertPattern p = case p of
   PWildcard -> L.PWildcard
-  PConstant (UpperIdentifier uid) -> L.PConstant uid
+  PConstant uid -> L.PConstant uid
   PApply p1 p2 -> L.PApply (convertPattern p1) (convertPattern p2)
   PParenthesis p' -> convertPattern p'
-  PVariable (LowerIdentifier v) -> L.PAlias v L.PWildcard
+  PVariable v -> L.PAlias v L.PWildcard
 
-convertExpression :: Expression -> L.Expression PrimIndentifier Identifier Identifier
+convertExpression :: Expression -> L.Expression PrimIndentifier UpperIdentifier LowerIdentifier
 convertExpression e = case e of
-  EConstant (UpperIdentifier uid) -> L.EConstant uid
+  EConstant uid -> L.EConstant uid
   EPrim pid -> L.EPrim pid
-  EVariable (LowerIdentifier v) -> L.EVariable v
+  EVariable v -> L.EVariable v
   ELambda cases -> L.ELambda $ map (\(Case p e') -> L.Case (convertPattern p) (convertExpression e')) cases
   EApply e1 e2 -> L.EApply (convertExpression e1) (convertExpression e2)
   EParenthesis e' -> convertExpression e'
 
-convert :: Program -> L.Expression PrimIndentifier Identifier Identifier
+convert :: Program -> L.Expression PrimIndentifier UpperIdentifier LowerIdentifier
 convert [] = error "no decls"
 convert [ValueDeclaration p e] = case p of
   PWildcard -> convertExpression e

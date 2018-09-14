@@ -1,15 +1,15 @@
-{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Text.Megaparsec
-import HaskellStyleParser
-import Data.List
-import Data.Maybe
+import           Data.List
+import           Data.Maybe
 import qualified Data.Text as T
+import           HaskellStyleParser
+import           Interpreter
 import qualified Lang as L
-import Surface
-import SurfaceToCore
-import Interpreter
+import           Surface
+import           PrimEnv
+import           SurfaceToCore
+import           Text.Megaparsec
 
 main :: IO ()
 main = do

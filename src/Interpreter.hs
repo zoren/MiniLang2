@@ -2,32 +2,35 @@
 module Interpreter where
 
 import           Control.Monad (liftM2)
-import           Data.Function (fix)
 import qualified Data.Map.Strict as Map
 import           Data.Maybe (fromMaybe)
 import           Lang
-import Data.Text (Text)
 
 type Environment c v = Map.Map v (Value c v)
 type PrimFunction c v = Value c v -> Value c v
 data Value c v
   = VConstant c
-  | VPrim (PrimFunction c v)
   | VApply (Value c v) (Value c v)
+  | VPrim (PrimFunction c v)
   | VClosure [Case (PrimFunction c v) c v] (Environment c v)
 
 instance (Eq c, Eq v) => Eq (Value c v) where
     x == y = case (x, y) of
       (VConstant c1, VConstant c2) -> c1 == c2
---      (VPrim p1, VPrim p2) -> p1 == p2
       (VApply v11 v12, VApply v21 v22) -> v11 == v21 && v12 == v22
-      _ -> False
+      (VPrim _, VPrim _) -> error "cannot compare prims"
+      (VClosure {}, VClosure {}) -> error "cannot compare closures"
+      _ -> error "incompatible comparison"
 
 instance (Show c, Show v) => Show (Value c v) where
     show x = case x of
       VConstant c -> show c
+      VApply v1 v2 ->
+        show v1 ++ " " ++
+             case v2 of
+               VApply {} -> " (" ++ show v2 ++ ")"
+               _ -> show v2
       VPrim {} -> "<prim>"
-      VApply v1 v2 -> show v1 ++ " " ++ show v2
       VClosure {} -> "<closure>"
 
 emptyEnv :: Environment c v
@@ -71,9 +74,3 @@ interpret expression enviroment = case expression of
 
 interpretClosedExp :: (Ord v, Eq c) => Expression (PrimFunction c v) c v -> Value c v
 interpretClosedExp e = interpret e emptyEnv
-
-primMap :: Eq c => Text -> Value c Text -> Value c Text
-primMap name = case name of
-  "fix" -> fix . apply
-  _ -> error "prim not known"
-
