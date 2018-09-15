@@ -18,7 +18,9 @@ import           Surface
 type Parser a = Parsec Void Text a
 
 lspace :: Parser () -> Parser ()
-lspace sp = L.space sp empty empty
+lspace sp = L.space sp lineComment empty
+  where
+    lineComment = char '#' *> void (takeWhileP (Just "character") (/= '\n'))
 
 scn :: Parser ()
 scn = lspace space1
