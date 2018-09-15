@@ -15,4 +15,4 @@ main :: IO ()
 main = do
     lines <- getContents
     let prog = fromMaybe (error "could not parse") $ parseMaybe pprog $ T.pack lines
-    print $ interpretClosedExp (L.mapPrim (\(PrimIndentifier name) -> primMap name) $ convert prog)
+    print $ interpretClosedExp (L.mapPrim primMap $ convert prog)

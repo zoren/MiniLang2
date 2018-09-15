@@ -17,10 +17,10 @@ testParser :: (Eq a, Show a) => Parser a -> Text -> a -> Test
 testParser parser t expected =
   TestLabel (T.unpack t) $ TestCase (assertEqual (T.unpack t) (unsafeParse parser t) expected)
 
-pc = PConstant . UpperIdentifier
-pv = PVariable . LowerIdentifier
-ec = EConstant . UpperIdentifier
-ev = EVariable . LowerIdentifier
+pc = PConstant
+pv = PVariable
+ec = EConstant
+ev = EVariable
 
 patternTests =
   let
@@ -41,7 +41,7 @@ expressionTests =
   in
   TestList
   [ t "Nil" $ ec "Nil"
-  , t "$fix" $ EPrim $ PrimIndentifier "fix"
+  , t "$fix" $ EPrim "fix"
   , t "x" $ ev "x"
   , t "\\x.x" $ ELambda [pv "x" `Case` ev "x"]
   , t "\\x.x|y.y" $ ELambda [pv "x" `Case` ev "x"
@@ -66,7 +66,7 @@ programTests =
 evalExpTests =
   let
     p = unsafeParse pexp
-    i t = interpret (L.mapPrim (\(PrimIndentifier name) -> primMap name) $ convertExpression $ p t) emptyEnv
+    i t = interpret (L.mapPrim primMap $ convertExpression $ p t) emptyEnv
     e e1 e2 = TestCase $ assertEqual "" (i e2) (i e1)
   in
     TestList

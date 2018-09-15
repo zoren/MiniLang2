@@ -32,14 +32,14 @@ trailingChars = takeWhileP Nothing $ \c -> isAlphaNum c || c == '_'
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
-lowerId :: Parser LowerIdentifier
-lowerId = LowerIdentifier <$> lexeme (T.cons <$> lowerChar <*> trailingChars)
+lowerId :: Parser Identifier
+lowerId = lexeme (T.cons <$> lowerChar <*> trailingChars)
 
-upperId :: Parser UpperIdentifier
-upperId = UpperIdentifier <$> lexeme (T.cons <$> upperChar <*> trailingChars)
+upperId :: Parser Identifier
+upperId = lexeme (T.cons <$> upperChar <*> trailingChars)
 
-primId :: Parser PrimIndentifier
-primId = PrimIndentifier <$> lexeme (T.cons <$> char '$' *> trailingChars)
+primId :: Parser Identifier
+primId = lexeme (char '$' *> trailingChars)
 
 sym :: Char -> Parser ()
 sym = void . lexeme . char
