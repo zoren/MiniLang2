@@ -55,12 +55,14 @@ expressionTests =
 programTests =
   let
     t = testParser pprog
+    vd = ValueDeclaration
   in
     TestList
     [ t "" []
-    , t "x = Nil" [ValueDeclaration (pv "x") (ec "Nil")]
-    , t "x = A\ny = B" [ValueDeclaration (pv "x") (ec "A")
-                       ,ValueDeclaration (pv "y") (ec "B")]
+    , t "x = Nil" [vd (pv "x") (ec "Nil")]
+    , t "x = A\ny = B" [vd (pv "x") (ec "A")
+                       ,vd (pv "y") (ec "B")]
+    , t "x = A\n" [vd (pv "x") (ec "A")]
     ]
 
 evalExpTests =

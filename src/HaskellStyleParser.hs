@@ -73,4 +73,4 @@ pdecl :: Parser Declaration
 pdecl = ValueDeclaration <$> ppattern <* sym '=' <*> pexp
 
 pprog :: Parser Program
-pprog = many $ L.nonIndented scn pdecl
+pprog = many $ L.nonIndented scn pdecl <* scn
