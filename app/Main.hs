@@ -13,6 +13,6 @@ import           Text.Megaparsec
 
 main :: IO ()
 main = do
-    lines <- getContents
-    let prog = fromMaybe (error "could not parse") $ parseMaybe pprog $ T.pack lines
-    print $ interpretClosedExp (L.mapPrim primMap $ convert prog)
+  lines <- getContents
+  let prog = fromMaybe (error "could not parse") $ parseMaybe pprog $ T.pack lines
+  print $ interpretClosedExp (L.mapPrim primMap $ convert prog)
