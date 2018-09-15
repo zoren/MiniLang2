@@ -21,6 +21,8 @@ pc = PConstant
 pv = PVariable
 ec = EConstant
 ev = EVariable
+eapp = EApply
+papp = PApply
 
 patternTests =
   let
@@ -59,10 +61,15 @@ programTests =
   in
     TestList
     [ t "" []
-    , t "x = Nil" [vd (pv "x") (ec "Nil")]
-    , t "x = A\ny = B" [vd (pv "x") (ec "A")
-                       ,vd (pv "y") (ec "B")]
-    , t "x = A\n" [vd (pv "x") (ec "A")]
+    , t "x = Nil" [pv "x" `vd` ec "Nil"]
+    , t "x = A\ny = B" [pv "x" `vd` ec "A"
+                       ,pv "y" `vd` ec "B"]
+    , t "x = A\n" [pv "x" `vd` ec "A"]
+    , t "x = A\n B" [pv "x" `vd` (ec "A" `EApply` ec "B") ]
+    , t "x = A\n   y" [pv "x" `vd` (ec "A" `EApply` ev "y") ]
+    , t "f =\n \\x.x" [pv "f" `vd` ELambda [Case (pv "x") (ev "x")]]
+    , t "f = \\Nil.None\n    |Cons x _.Some x" [pv "f" `vd` ELambda [Case (pc "Nil") (ec "None")
+                                                                    ,Case (pc "Cons" `papp` pv "x" `papp` PWildcard) ((ec "Some" `eapp` ev "x"))]]
     ]
 
 evalExpTests =
