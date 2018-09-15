@@ -28,6 +28,10 @@ scn = lspace space1
 sc :: Parser ()
 sc = lspace $ void $ takeWhile1P Nothing $ \x -> x == ' ' || x == '\t'
 
+indented p = L.indentGuard scn GT pos1 *> p
+
+nonIndented = L.nonIndented scn
+
 trailingChars :: Parser Text
 trailingChars = takeWhileP Nothing $ \c -> isAlphaNum c || c == '_'
 
@@ -61,18 +65,22 @@ ppattern =
   , PParenthesis <$> parens ppattern
   ]
 
-pexp :: Parser Expression
-pexp =
-  pcomb EApply $ choice
+pexpAtom :: Parser Expression
+pexpAtom = choice
   [ EConstant <$> upperId
   , EVariable <$> lowerId
   , EPrim <$> primId
-  , ELambda <$ sym '\\' <*> sepBy1 (Case <$> ppattern <* sym '.' <*> pexp) (sym '|')
+  , ELambda <$ sym '\\' <*> sepBy1 (Case <$> ppattern <* sym '.' <*> pexp) (try $ indented $ sym '|')
   , EParenthesis <$> parens pexp
   ]
 
+pexp :: Parser Expression
+pexp = pcomb EApply pexpAtom
+
+pdeclExp = pcomb EApply (try $ indented pexpAtom)
+
 pdecl :: Parser Declaration
-pdecl = ValueDeclaration <$> ppattern <* sym '=' <*> pexp
+pdecl = ValueDeclaration <$> ppattern <* sym '=' <*> pdeclExp
 
 pprog :: Parser Program
-pprog = many $ L.nonIndented scn pdecl <* scn
+pprog = many $ nonIndented pdecl <* scn
