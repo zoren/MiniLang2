@@ -1,18 +1,16 @@
 module Main where
 
-import           Data.List
 import           Data.Maybe
 import qualified Data.Text as T
 import           HaskellStyleParser
 import           Interpreter
 import qualified Lang as L
-import           Surface
 import           PrimEnv
 import           SurfaceToCore
 import           Text.Megaparsec
 
 main :: IO ()
 main = do
-  lines <- getContents
-  let prog = fromMaybe (error "could not parse") $ parseMaybe pprog $ T.pack lines
+  contents <- getContents
+  let prog = fromMaybe (error "could not parse") $ parseMaybe pprog $ T.pack contents
   print $ interpretClosedExp (L.mapPrim primMap $ convert prog)
