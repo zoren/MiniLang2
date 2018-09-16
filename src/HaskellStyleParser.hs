@@ -28,8 +28,10 @@ scn = lspace space1
 sc :: Parser ()
 sc = lspace $ void $ takeWhile1P Nothing $ \x -> x == ' ' || x == '\t'
 
+indented :: Parser a -> Parser a
 indented p = L.indentGuard scn GT pos1 *> p
 
+nonIndented :: Parser a -> Parser a
 nonIndented = L.nonIndented scn
 
 trailingChars :: Parser Text
@@ -86,6 +88,7 @@ pexpAtom = choice
 pexp :: Parser Expression
 pexp = pcomb EApply pexpAtom
 
+pdeclExp :: Parser Expression
 pdeclExp = pcomb EApply (try $ indented pexpAtom)
 
 pdecl :: Parser Declaration

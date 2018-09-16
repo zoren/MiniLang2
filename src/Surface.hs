@@ -19,8 +19,6 @@ data Pattern
   | PVariable Identifier -- x
   deriving (Eq, Show)
 
-newtype PrimIndentifier = PrimIndentifier Identifier
-  deriving (Eq, Show)
 data Case = Case Pattern Expression
   deriving (Eq, Show)
 data Expression
