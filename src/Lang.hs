@@ -23,5 +23,5 @@ mapPrim f = go
       EConstant c -> EConstant c
       EPrim p -> EPrim $ f p
       EVariable v -> EVariable v
-      ELambda cases -> ELambda $ map (\(Case p e) -> Case p $ go e) cases
+      ELambda cases -> ELambda $ map (\(Case p body) -> Case p $ go body) cases
       EApply e1 e2 -> EApply (go e1) (go e2)

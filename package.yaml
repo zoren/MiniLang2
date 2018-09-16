@@ -21,7 +21,6 @@ description:         Please see the README on GitHub at <https://github.com/gith
 
 dependencies:
 - base >= 4.7 && < 5
-- containers
 - text
 - megaparsec
 
@@ -29,7 +28,9 @@ library:
   source-dirs: src
   ghc-options:
   - -Wall
-
+  dependencies:
+  - containers
+  
 executables:
   minilang2-exe:
     main:                Main.hs
