@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module PrimEnv where
 
+import           Data.Char (chr, ord)
 import           Data.Function (fix)
 import qualified Data.Text as T
 import           Interpreter (apply, Value(..))
@@ -21,4 +22,8 @@ primMap name = case name of
       case arg of
         (VConstant (CAtom "T") `VApply` (VConstant (CString s)) `VApply` (VConstant (CInt i))) -> VConstant $ CChar $ T.index s i
         _ -> error $ "concat unexpected arg: " ++ show arg
+  "chr" ->
+    \(VConstant(CInt c)) -> VConstant $ CChar $ chr c
+  "ord" ->
+    \(VConstant(CChar c)) -> VConstant $ CInt $ ord c
   _ -> error "prim not known"
