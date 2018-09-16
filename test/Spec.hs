@@ -17,9 +17,9 @@ testParser :: (Eq a, Show a) => Parser a -> Text -> a -> Test
 testParser parser t expected =
   TestLabel (T.unpack t) $ TestCase (assertEqual (T.unpack t) (unsafeParse parser t) expected)
 
-pc = PConstant
+pc = PConstant . CAtom
 pv = PVariable
-ec = EConstant
+ec = EConstant . CAtom
 ev = EVariable
 eapp = EApply
 papp = PApply
@@ -43,6 +43,8 @@ expressionTests =
   in
   TestList
   [ t "Nil" $ ec "Nil"
+  , t "42" $ EConstant $ CInt 42
+  , t "\"abc\"" $ EConstant $ CString "abc"
   , t "$fix" $ EPrim "fix"
   , t "x" $ ev "x"
   , t "\\x.x" $ ELambda [pv "x" `Case` ev "x"]
@@ -89,6 +91,8 @@ evalExpTests =
     , e "(\\Cons x xs.x)(Cons A Nil)" "A"
     , e "(\\Cons x xs.xs)(Cons A Nil)" "Nil"
     , e "(\\Cons x _.x)(Cons A Nil)" "A"
+    , e "(\\Cons x _.x)(Cons 42 Nil)" "42"
+    , e "(\\Cons x _.x)(Cons \"a\" Nil)" "\"a\""
     , e "(\\Nil.None|Cons x _.Some x) Nil" "None"
     , e "(\\Nil.None|Cons x _.Some x)(Cons A Nil)" "Some A"
     , e "($fix \\r.\\Nil.Z|Cons _ xs.S(r xs))(Cons B (Cons A Nil))" "S(S Z)"

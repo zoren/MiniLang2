@@ -56,18 +56,26 @@ parens = between (sym '(') (sym ')')
 pcomb :: (a -> a -> a) -> Parser a -> Parser a
 pcomb f pelem = foldl1 f <$> some pelem
 
+pconstant :: Parser Constant
+pconstant =
+  choice
+  [ CInt <$> lexeme L.decimal
+  , CAtom <$> upperId
+  , CString . T.pack <$> lexeme (char '"' >> manyTill L.charLiteral (char '"'))
+  ]
+
 ppattern :: Parser Pattern
 ppattern =
   pcomb PApply $ choice
   [ PWildcard <$ sym '_'
-  , PConstant <$> upperId
+  , PConstant <$> pconstant
   , PVariable <$> lowerId
   , PParenthesis <$> parens ppattern
   ]
 
 pexpAtom :: Parser Expression
 pexpAtom = choice
-  [ EConstant <$> upperId
+  [ EConstant <$> pconstant
   , EVariable <$> lowerId
   , EPrim <$> primId
   , ELambda <$ sym '\\' <*> sepBy1 (Case <$> ppattern <* sym '.' <*> pexp) (try $ indented $ sym '|')

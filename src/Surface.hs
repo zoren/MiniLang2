@@ -1,12 +1,19 @@
 module Surface where
 
+import Data.Int (Int32)
 import Data.Text
 
 type Identifier = Text
 
+data Constant
+  = CAtom Identifier -- Nil, Cons
+  | CInt Int32 -- 0, 1, 2, 42
+  | CString Text -- "", "a"
+  deriving (Eq, Show)
+
 data Pattern
   = PWildcard -- _
-  | PConstant Identifier -- Cons
+  | PConstant Constant -- Cons
   | PApply Pattern Pattern -- Cons _ _
   | PParenthesis Pattern -- (Cons _ _)
   | PVariable Identifier -- x
@@ -17,7 +24,7 @@ newtype PrimIndentifier = PrimIndentifier Identifier
 data Case = Case Pattern Expression
   deriving (Eq, Show)
 data Expression
-  = EConstant Identifier -- Nil, Cons
+  = EConstant Constant
   | EPrim Identifier -- $eq
   | EVariable Identifier -- x
   | ELambda [Case]  -- | Nil . 0 | Cons _ _ . 1
