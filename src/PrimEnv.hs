@@ -16,7 +16,10 @@ primMap name = case name of
         (VConstant (CAtom "T") `VApply` (VConstant (CString s1)) `VApply` (VConstant (CString s2))) -> VConstant $ CString $ T.append s1 s2
         _ -> error $ "concat unexpected arg: " ++ show arg
   "strLen" ->
-    \(VConstant(CString s)) -> VConstant $ CInt $ T.length s
+    \arg ->
+      case arg of
+        (VConstant(CString s)) -> VConstant $ CInt $ T.length s
+        _ -> error $ "strLen unexpected arg: " ++ show arg
   "index" ->
     \arg ->
       case arg of
@@ -26,4 +29,21 @@ primMap name = case name of
     \(VConstant(CInt c)) -> VConstant $ CChar $ chr c
   "ord" ->
     \(VConstant(CChar c)) -> VConstant $ CInt $ ord c
+  "add" ->
+    \arg ->
+      case arg of
+        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> VConstant $ CInt $ i1 + i2
+        _ -> error $ "concat unexpected arg: " ++ show arg
+  "intEq" ->
+    \arg ->
+      case arg of
+        (VConstant (CAtom "Q") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2)) `VApply` v1 `VApply` v2) ->
+          if i1 == i2 then v1 else v2
+        _ -> error $ "intEq unexpected arg: " ++ show arg
+  "intLteq" ->
+    \arg ->
+      case arg of
+        (VConstant (CAtom "Q") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2)) `VApply` v1 `VApply` v2) ->
+          if i1 <= i2 then v1 else v2
+        _ -> error $ "intEq unexpected arg: " ++ show arg
   _ -> error "prim not known"
