@@ -93,6 +93,7 @@ evalExpTests =
     , e "(\\Cons x _.x)(Cons A Nil)" "A"
     , e "(\\Cons x _.x)(Cons 42 Nil)" "42"
     , e "(\\Cons x _.x)(Cons \"a\" Nil)" "\"a\""
+    , e "(\\Cons x _.x)(Cons 'a' Nil)" "'a'"
     , e "(\\Nil.None|Cons x _.Some x) Nil" "None"
     , e "(\\Nil.None|Cons x _.Some x)(Cons A Nil)" "Some A"
     , e "($fix \\r.\\Nil.Z|Cons _ xs.S(r xs))(Cons B (Cons A Nil))" "S(S Z)"

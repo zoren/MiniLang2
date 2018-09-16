@@ -62,6 +62,7 @@ pconstant =
   [ CInt <$> lexeme L.decimal
   , CAtom <$> upperId
   , CString . T.pack <$> lexeme (char '"' >> manyTill L.charLiteral (char '"'))
+  , CChar <$> lexeme (char '\'' *> L.charLiteral <* char '\'')
   ]
 
 ppattern :: Parser Pattern

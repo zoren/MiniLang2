@@ -9,6 +9,7 @@ data Constant
   = CAtom Identifier -- Nil, Cons
   | CInt Int32 -- 0, 1, 2, 42
   | CString Text -- "", "a"
+  | CChar Char -- 'a', `\n`
   deriving (Eq, Show)
 
 data Pattern
