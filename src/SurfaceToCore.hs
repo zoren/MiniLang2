@@ -1,7 +1,8 @@
 module SurfaceToCore where
 
-import Surface
+import           Constant
 import qualified Lang as L
+import           Surface
 
 convertPattern :: Pattern -> L.Pattern Constant Identifier
 convertPattern p = case p of
@@ -11,7 +12,7 @@ convertPattern p = case p of
   PParenthesis p' -> convertPattern p'
   PVariable v -> L.PAlias v L.PWildcard
 
-convertExpression :: Expression -> L.Expression Identifier Constant Identifier
+convertExpression :: Expression -> L.Expression Constant Identifier
 convertExpression e = case e of
   EConstant uid -> L.EConstant uid
   EPrim pid -> L.EPrim pid
@@ -20,7 +21,7 @@ convertExpression e = case e of
   EApply e1 e2 -> L.EApply (convertExpression e1) (convertExpression e2)
   EParenthesis e' -> convertExpression e'
 
-convert :: Program -> L.Expression Identifier Constant Identifier
+convert :: Program -> L.Expression Constant Identifier
 convert [] = error "no decls"
 convert [ValueDeclaration p e] = case p of
   PWildcard -> convertExpression e

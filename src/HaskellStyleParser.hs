@@ -13,6 +13,7 @@ import Data.Text (
   )
 import qualified Data.Text as T
 import           Data.Void
+import           Constant
 import           Surface
 
 type Parser a = Parsec Void Text a

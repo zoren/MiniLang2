@@ -9,7 +9,7 @@ import qualified Data.Text as T
 import qualified Lang as L
 import           SurfaceToCore
 import           Interpreter
-import           PrimEnv
+import           Constant
 
 unsafeParse parser t = fromMaybe (error $ "did not parse: " ++ T.unpack t) $ parseMaybe parser t
 
@@ -77,7 +77,7 @@ programTests =
 evalExpTests =
   let
     p = unsafeParse pexp
-    i t = interpret (L.mapPrim primMap $ convertExpression $ p t) emptyEnv
+    i t = interpret (convertExpression $ p t) emptyEnv
     e e1 e2 = TestCase $ assertEqual "" (i e2) (i e1)
   in
     TestList
