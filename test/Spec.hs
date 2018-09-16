@@ -66,12 +66,12 @@ programTests =
     , t "x = Nil" [pv "x" `vd` ec "Nil"]
     , t "x = A\ny = B" [pv "x" `vd` ec "A"
                        ,pv "y" `vd` ec "B"]
-    , t "x = A\n" [pv "x" `vd` ec "A"]
-    , t "x = A\n B" [pv "x" `vd` (ec "A" `EApply` ec "B") ]
-    , t "x = A\n   y" [pv "x" `vd` (ec "A" `EApply` ev "y") ]
-    , t "f =\n \\x.x" [pv "f" `vd` ELambda [Case (pv "x") (ev "x")]]
-    , t "f = \\Nil.None\n    |Cons x _.Some x" [pv "f" `vd` ELambda [Case (pc "Nil") (ec "None")
-                                                                    ,Case (pc "Cons" `papp` pv "x" `papp` PWildcard) ((ec "Some" `eapp` ev "x"))]]
+    , t "x = A" [pv "x" `vd` ec "A"]
+    , t "x = A B" [pv "x" `vd` (ec "A" `EApply` ec "B") ]
+    , t "x = A   y" [pv "x" `vd` (ec "A" `EApply` ev "y") ]
+    , t "f = \\x.x" [pv "f" `vd` ELambda [Case (pv "x") (ev "x")]]
+    , t "f = \\Nil.None    |Cons x _.Some x" [pv "f" `vd` ELambda [Case (pc "Nil") (ec "None")
+                                                                  ,Case (pc "Cons" `papp` pv "x" `papp` PWildcard) ((ec "Some" `eapp` ev "x"))]]
     ]
 
 evalExpTests =
