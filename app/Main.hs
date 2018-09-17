@@ -12,4 +12,5 @@ main :: IO ()
 main = do
   contents <- getContents
   let prog = fromMaybe (error "could not parse") $ parseMaybe pprog $ T.pack contents
-  print $ interpretClosedExp $ convert prog
+  v <- interpretClosedExp $ convert prog
+  print v

@@ -77,8 +77,11 @@ programTests =
 evalExpTests =
   let
     p = unsafeParse pexp
-    i t = interpret (convertExpression $ p t) emptyEnv
-    e e1 e2 = TestCase $ assertEqual "" (i e2) (i e1)
+    i t = interpretClosedExp $ convertExpression $ p t
+    e e1 e2 = test $ do
+      v1 <- i e1
+      v2 <- i e2
+      assertEqual "" v2 v1
   in
     TestList
     [ e "(\\x.x)A" "A"
