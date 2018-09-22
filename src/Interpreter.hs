@@ -84,25 +84,22 @@ primMap name = case name of
   "intEq" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) ->
-          retBool $ i1 == i2
+        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 == i2
         _ -> error $ "intEq unexpected arg: " ++ show arg
   "intSle" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) ->
-          retBool $ i1 <= i2
+        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 <= i2
         _ -> error $ "intSle unexpected arg: " ++ show arg
   "intSlt" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) ->
-          retBool $ i1 < i2
+        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 < i2
         _ -> error $ "intSlt unexpected arg: " ++ show arg
   _ -> error $ "prim not known" ++ show name
   where
     rvc = return . VConstant
-    retBool b = return $ VConstant $ CInt $ if b then 0 else 1
+    retBool b = rvc $ CInt $ if b then 1 else 0
 
 emptyEnv :: Environment c v
 emptyEnv = Map.empty
