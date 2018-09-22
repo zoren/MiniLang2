@@ -8,11 +8,11 @@ concat = curry $concat
 index = curry $index
 subString = \s.\start.\length.$subString(T3 s start length)
 
-intEq = \i1.\i2.\vt.\vf.$intEq(Q i1 i2 vt vf)
-intEqTF = \i1.\i2.$intEq(Q i1 i2 True False)
-intLteq = \i1.\i2.\vt.\vf.$intLteq(Q i1 i2 vt vf)
+intEq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)($intEq(T i1 i2))
+#intEqTF = \i1.\i2.$intEq(Q i1 i2 True False)
+intLteq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)($intSlt(T i1 i2))
 succ = add 1
-toList = \s.$fix \rec.\i.(\True.Nil|False.Cons (index s i) (rec(succ i)))(intEqTF i ($strLen s))
+#toList = \s.$fix \rec.\i.(\True.Nil|False.Cons (index s i) (rec(succ i)))(intEqTF i ($strLen s))
 
 isInRange = \start.\end.\c.\t.\f.intLteq ($ord start) ($ord c) (intLteq ($ord c) ($ord end) t f) f
 isDigit = isInRange '0' '9'
