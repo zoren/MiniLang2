@@ -1,0 +1,33 @@
+flip = \f.\x.\y.f y x
+curry = \f.\a1.\a2.f (T a1 a2)
+
+add = curry $add
+sub = curry $sub
+mult = curry $mult
+concat = curry $concat
+index = curry $index
+subString = \s.\start.\length.$subString(T3 s start length)
+
+intEq = \i1.\i2.\vt.\vf.$intEq(Q i1 i2 vt vf)
+intEqTF = \i1.\i2.$intEq(Q i1 i2 True False)
+intLteq = \i1.\i2.\vt.\vf.$intLteq(Q i1 i2 vt vf)
+succ = add 1
+toList = \s.$fix \rec.\i.(\True.Nil|False.Cons (index s i) (rec(succ i)))(intEqTF i ($strLen s))
+
+isInRange = \start.\end.\c.\t.\f.intLteq ($ord start) ($ord c) (intLteq ($ord c) ($ord end) t f) f
+isDigit = isInRange '0' '9'
+isLower = isInRange 'a' 'z'
+isUpper = isInRange 'A' 'Z'
+isNotQuote = \'"'.(\t.\f.f)|_.(\t.\f.t)
+
+scan = \s.\pred.$fix\rec.\i.pred(index s i)(\_.rec(succ i))(\_.i)U
+strfoldl = \f.\s.$fix\rec.\acc.\i.intEq i ($strLen s) (\_.acc)(\_.rec (f acc (index s i)) (succ i)) U
+foldl = \f.$fix\rec.\acc.\Nil.acc|Cons x xs.rec (f acc x) xs
+stringToInt = \s.strfoldl (\cur.\char.add (mult 10 cur) (sub ($ord char) ($ord '0'))) s 0 0
+#peek = \s.\i.intLt i ($strLen s) (Some (index s i)) (None)
+pconstant = \s.\i.(\'"'.Just(CString(subString s (succ i) (sub (scan s isNotQuote (succ i))1)))|'\''.Just(CChar('X'))|c."fail")(index s i)
+_ = scan "2134 b" isDigit 0
+_ = strfoldl (flip Cons) "Se" Nil 0
+_ = stringToInt "1234"
+#_ = foldl (flip Cons) Nil (Cons 'a' (Cons 'b' Nil))
+_ = L (pconstant "\"abc\"" 0) (pconstant "'a'" 0) (pconstant "1234" 0)
