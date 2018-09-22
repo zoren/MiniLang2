@@ -5,8 +5,9 @@ module Interpreter(
 
 import           Constant
 import           Control.Monad (liftM2)
-import           Data.Char (chr, ord)
 import           Control.Monad.Fix (mfix)
+import           Data.Char (chr, ord)
+import           Data.IORef
 import qualified Data.Map.Strict as Map
 import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
@@ -18,6 +19,7 @@ data Value c v
   | VApply (Value c v) (Value c v)
   | VPrim T.Text
   | VClosure [Case c v] (Environment c v)
+  | VRef (IORef (Value c v))
 
 instance (Eq c, Eq v) => Eq (Value c v) where
     x == y = case (x, y) of
@@ -37,6 +39,7 @@ instance (Show c, Show v) => Show (Value c v) where
                _ -> show v2
       VPrim {} -> "<prim>"
       VClosure {} -> "<closure>"
+      VRef {} -> "<ref>"
 
 primMap :: (Ord v, Show v) => T.Text -> Value Constant v -> IO (Value Constant v)
 primMap name = case name of
@@ -96,6 +99,17 @@ primMap name = case name of
       case arg of
         (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 < i2
         _ -> error $ "intSlt unexpected arg: " ++ show arg
+  "newRef" -> \arg -> VRef <$> newIORef arg
+  "readRef" -> \arg ->
+      case arg of
+        VRef r -> readIORef r
+        _ -> error $ "readRef unexpected arg: " ++ show arg
+  "writeRef" -> \arg ->
+      case arg of
+        (VConstant (CAtom "T") `VApply` (VRef r) `VApply` newValue) -> do
+          writeIORef r newValue
+          return newValue
+        _ -> error $ "writeRef unexpected arg: " ++ show arg
   _ -> error $ "prim not known" ++ show name
   where
     rvc = return . VConstant
@@ -131,6 +145,7 @@ apply v1 v2 = case v1 of
       go [] = error "pattern match not exhaustive"
       go (Case pat body : ccases') =
         maybe (go ccases') (interpret body . flip mergeEnvs cenvironment) $ match pat v2
+  VRef {} -> error "cannot apply ref cell"
 
 interpret :: (Ord v, Show v) => Expression Constant v -> Environment Constant v -> IO (Value Constant v)
 interpret expression enviroment = case expression of

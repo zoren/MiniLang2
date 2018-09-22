@@ -7,10 +7,11 @@ mult = curry $mult
 concat = curry $concat
 index = curry $index
 subString = \s.\start.\length.$subString(T3 s start length)
+intSlt = curry $intSlt
 
 intEq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)($intEq(T i1 i2))
 #intEqTF = \i1.\i2.$intEq(Q i1 i2 True False)
-intLteq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)($intSlt(T i1 i2))
+intLteq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)(intSlt i1 i2)
 succ = add 1
 #toList = \s.$fix \rec.\i.(\True.Nil|False.Cons (index s i) (rec(succ i)))(intEqTF i ($strLen s))
 
@@ -26,8 +27,14 @@ foldl = \f.$fix\rec.\acc.\Nil.acc|Cons x xs.rec (f acc x) xs
 stringToInt = \s.strfoldl (\cur.\char.add (mult 10 cur) (sub ($ord char) ($ord '0'))) s 0 0
 #peek = \s.\i.intLt i ($strLen s) (Some (index s i)) (None)
 pconstant = \s.\i.(\'"'.Just(CString(subString s (succ i) (sub (scan s isNotQuote (succ i))1)))|'\''.Just(CChar('X'))|c."fail")(index s i)
+seq = \p1.\p2.\comb.\s.(\None.None|Some v1.(\None.None|Some v2.comb v1 v2)(p2 s))(p1 s)
+getCur = \Stream s i.(\1.Some(index s i)|0.None)(intSlt i ($strLen s))
+mapMaybe = \f.\None.None|Some x.Some(f x)
 _ = scan "2134 b" isDigit 0
 _ = strfoldl (flip Cons) "Se" Nil 0
 _ = stringToInt "1234"
 #_ = foldl (flip Cons) Nil (Cons 'a' (Cons 'b' Nil))
 _ = L (pconstant "\"abc\"" 0) (pconstant "'a'" 0) (pconstant "1234" 0)
+_ = L (getCur (Stream "a" 0)) (getCur (Stream "" 0))
+r = $newRef 0
+_ = L ($readRef r) ($writeRef(T r 42)) ($readRef r)
