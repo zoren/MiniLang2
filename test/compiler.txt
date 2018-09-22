@@ -1,3 +1,7 @@
+# compiler
+id = \x.x
+const = \a.\b.a
+ignore = \a.\b.b
 flip = \f.\x.\y.f y x
 curry = \f.\a1.\a2.f (T a1 a2)
 
@@ -10,9 +14,6 @@ subString = \s.\start.\length.$subString(T3 s start length)
 intSlt = curry $intSlt
 intSle = curry $intSle
 writeRef = curry $writeRef
-
-const = \a.\b.a
-ignore = \a.\b.b
 
 intEq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)($intEq(T i1 i2))
 #intEqTF = \i1.\i2.$intEq(Q i1 i2 True False)
@@ -28,7 +29,6 @@ isLower = isInRange 'a' 'z'
 isLowerTF = mkTF isLower
 isUpper = isInRange 'A' 'Z'
 isUpperTF = mkTF isUpper
-id = \x.x
 or = \True.const True|False.id
 isAlphaNum = \c.or (isUpperTF c) (or (isLowerTF c) (isDigitTF c))
 isNotQuote = \'"'.(\t.\f.f)|_.(\t.\f.t)
