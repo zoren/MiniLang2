@@ -142,7 +142,7 @@ apply v1 v2 = case v1 of
   VApply {} -> return $ VApply v1 v2
   VClosure ccases cenvironment -> go ccases
     where
-      go [] = error "pattern match not exhaustive"
+      go [] = error $ "pattern match not exhaustive: " ++ show v2
       go (Case pat body : ccases') =
         maybe (go ccases') (interpret body . flip mergeEnvs cenvironment) $ match pat v2
   VRef {} -> error "cannot apply ref cell"
