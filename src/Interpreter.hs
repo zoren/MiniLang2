@@ -35,7 +35,7 @@ instance (Show c, Show v) => Show (Value c v) where
       VApply v1 v2 ->
         show v1 ++ " " ++
              case v2 of
-               VApply {} -> " (" ++ show v2 ++ ")"
+               VApply {} -> "(" ++ show v2 ++ ")"
                _ -> show v2
       VPrim {} -> "<prim>"
       VClosure {} -> "<closure>"
