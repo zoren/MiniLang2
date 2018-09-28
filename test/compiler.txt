@@ -30,7 +30,6 @@ isUpperTF = mkTF isUpper
 or = \True.const True|False.id
 isAlphaNumTF = \c.or (isUpperTF c) (or (isLowerTF c) (isDigitTF c))
 
-scan = \s.\pred.$fix\rec.\i.pred(index s i)(\_.rec(succ i))(\_.i)U
 strfoldl = \f.\s.$fix\rec.\acc.\i.intEq i ($strLen s) (\_.acc)(\_.rec (f acc (index s i)) (succ i)) U
 foldl = \f.$fix\rec.\acc.\Nil.acc|Cons x xs.rec (f acc x) xs
 foldl1 = \f.\Cons x xs.foldl f x xs
