@@ -37,7 +37,10 @@ stringToInt = \s.strfoldl (\cur.\char.add (mult 10 cur) (sub ($ord char) ($ord '
 mapMaybe = \f.\None.None|Some x.Some(f x)
 seq = \p1.\p2.\comb.\s.(\None.None|Some v1.(\None.None|Some v2.Some(comb v1 v2))(p2 s))(p1 s)
 choice = \p1.\p2.\s.(\None.p2 s|sv1.sv1)(p1 s)
-between = \first.\middle.\end.seq first (seq middle end const) ignore
+
+pfst = \p1.\p2.seq p1 p2 const
+psnd = \p1.\p2.seq p1 p2 ignore
+between = \first.\middle.\end.psnd first (pfst middle end)
 pmap = \f.\p.\s.mapMaybe f (p s)
 
 mkStream = \s.Stream s ($newRef 0)
@@ -50,7 +53,7 @@ getString = \Stream s _.s
 mkRec = $fix\rec.\recCtor.\s.(\p.p s)(recCtor (\_.rec recCtor))
 many = \p.mkRec\rec.choice (seq p (rec U) Cons) (const (Some Nil))
 many1 = \p.seq p (many p) Cons
-sepBy1 = \p.\sep.seq p (many (seq sep p ignore)) Cons
+sepBy1 = \p.\sep.seq p (many (psnd sep p)) Cons
 pcomb = \ctor.\p.pmap(\l.foldl1 ctor l)(many1 p)
 
 manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance 1 s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
@@ -61,11 +64,11 @@ word = \firstPred.\followPred.\s.seq (pred1 firstPred) (manyI followPred) (\fc.\
 upperId = word isUpperTF isAlphaNumTF
 lowerId = word isLowerTF isAlphaNumTF
 word1 = \p.word p p
-lex = \p.seq (manyI (\' '.True|_.False)) p ignore
+lex = \p.psnd (manyI (\' '.True|_.False)) p
 decimal = lex (pmap stringToInt (word1 isDigitTF))
 qstring = \s.wordCont (\'\"'.True|_.False) (\'\"'.False|_.True) (\fc.\l.subString (getString s) fc l) s
 char = \c.pred1(\pc.intEq($ord pc)($ord c) True False)
-pprim = seq (char '$') (word1 isAlphaNumTF) ignore
+pprim = psnd (char '$') (word1 isAlphaNumTF)
 ch = \c.lex (char c)
 betweenCh = \c1.\p.\c2.between (ch c1) p (ch c2)
 parens = \p.betweenCh '(' p ')'
@@ -75,8 +78,8 @@ ppatternAtom = choice (pmap (const PWildcard) (char '_')) (choice (pmap PConstan
 ppattern1 = mkRec\rec.choice ppatternAtom (pmap PParenthesis (parens (rec U)))
 ppattern = pcomb PApply ppattern1
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
-pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (seq (ch '\\') (sepBy1 (seq ppattern (seq (ch '.') (rec U) ignore) T) (ch '|')) ignore))))
-pdecl = seq ppattern (seq (ch '=') pexp ignore) Decl
+pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq ppattern (psnd (ch '.') (rec U)) T) (ch '|'))))))
+pdecl = seq ppattern (psnd (ch '=') pexp) Decl
 parser = pdecl
 p = \str.parser (mkStream str)
 #_ = L (p "f x") (p "((x))") (p "(xyz)") (p "()") (p "x)") (p "xyz)") (p "x))") (p "$eq") (p "Nil") (p "\\Some x.x")
