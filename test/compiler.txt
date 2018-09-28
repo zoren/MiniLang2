@@ -17,7 +17,6 @@ writeRef = curry $writeRef
 
 intEq = \i1.\i2.(\0.False|1.True)(intEq i1 i2)
 intLteq = \i1.\i2.(\0.False|1.True)(intSle i1 i2)
-succ = add 1
 
 or = \True.const True|False.id
 and = \False.const False|True.id
@@ -28,7 +27,7 @@ isLower = isInRange 'a' 'z'
 isUpper = isInRange 'A' 'Z'
 isAlphaNum = \c.or (isUpper c) (or (isLower c) (isDigit c))
 
-strfoldl = \f.\s.$fix\rec.\acc.\i.(\True.acc|False.rec (f acc (index s i)) (succ i))(intEq i ($strLen s))
+strfoldl = \f.\s.$fix\rec.\acc.\i.(\True.acc|False.rec (f acc (index s i)) (add 1 i))(intEq i ($strLen s))
 foldl = \f.$fix\rec.\acc.\Nil.acc|Cons x xs.rec (f acc x) xs
 foldl1 = \f.\Cons x xs.foldl f x xs
 stringToInt = \s.strfoldl (\cur.\char.add (mult 10 cur) (sub ($ord char) ($ord '0'))) s 0 0
