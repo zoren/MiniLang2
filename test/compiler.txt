@@ -43,7 +43,7 @@ pmap = \f.\p.\s.mapMaybe f (p s)
 mkStream = \s.Stream s ($newRef 0)
 tryGetCurChar = \Stream s iRef.(\i.(\1.Some(index s i)|0.None)(intSlt i ($strLen s)))($readRef iRef)
 modify = \f.\ref.writeRef ref (f ($readRef ref))
-advance = \n.\Stream _ iRef.modify (add n) iRef
+advance = \Stream _ iRef.modify (add 1) iRef
 getIndex = \Stream _ iRef.$readRef iRef
 getString = \Stream s _.s
 
@@ -53,11 +53,11 @@ many1 = \p.seq p (many p) Cons
 sepBy1 = \p.\sep.seq p (many (psnd sep p)) Cons
 pcomb = \ctor.\p.pmap(\l.foldl1 ctor l)(many1 p)
 
-manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance 1 s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
-pred1 = \pred.\s.(\Some True.Some(advance 1 s)|_.None)(mapMaybe pred (tryGetCurChar s))
+manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
+pred1 = \pred.\s.(\Some True.Some(advance s)|_.None)(mapMaybe pred (tryGetCurChar s))
 predCh = \pred.\s.mapMaybe(\i.index (getString s)(sub i 1))(pred1 pred s)
 word = \firstPred.\followPred.\s.seq (pred1 firstPred) (manyI followPred) (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) s
-manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance 1 s)(r U)|_.Some (T start (getIndex s)))(mapMaybe pred (tryGetCurChar s)))(getIndex s) U
+manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance s)(r U)|_.Some (T start (getIndex s)))(mapMaybe pred (tryGetCurChar s)))(getIndex s) U
 upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
 word1 = \p.word p p
