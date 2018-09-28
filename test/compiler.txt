@@ -62,11 +62,12 @@ wordCont = \firstPred.\followPred.\f.\s.seq (pred1 firstPred) (manyI followPred)
 word = \firstPred.\followPred.\s.seq (pred1 firstPred) (manyI followPred) (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) s
 upperId = word isUpperTF isAlphaNum
 lowerId = word isLowerTF isAlphaNum
-decimal = pmap stringToInt (word isDigitTF isDigitTF)
+lex = \p.seq (manyI (\' '.True|_.False)) p ignore
+decimal = lex (pmap stringToInt (word isDigitTF isDigitTF))
 qstring = \s.wordCont (\'\"'.True|_.False) (\'\"'.False|_.True) (\fc.\l.subString (getString s) fc l) s
+# todo trim dollar don't allow empty names
 pprim = word (\'$'.True|_.False) isAlphaNum
 char = \c.pred1(\pc.intEq($ord pc)($ord c) True False)
-lex = \p.seq (manyI (\' '.True|_.False)) p ignore
 ch = \c.lex (char c)
 betweenCh = \c1.\p.\c2.between (ch c1) p (ch c2)
 qchar = betweenCh ''' (predCh (const True)) '''
@@ -76,8 +77,9 @@ ppatternAtom = choice (pmap (const PWildcard) (char '_')) (choice (pmap PConstan
 ppattern1 = mkRec\rec.choice ppatternAtom (pmap PParenthesis (parens (rec U)))
 ppattern = pcomb PApply ppattern1
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
-pexp1 = mkRec\rec.choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (seq (ch '\\') (sepBy1 (seq ppattern (seq (ch '.') (rec U) ignore) T) (ch '|')) ignore)))
-pexp = pcomb EApply pexp1
-parser = pexp
+pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (seq (ch '\\') (sepBy1 (seq ppattern (seq (ch '.') (rec U) ignore) T) (ch '|')) ignore))))
+pdecl = seq ppattern (seq (ch '=') pexp ignore) Decl
+parser = pdecl
 p = \str.parser (mkStream str)
-_ = L (p "f x") (p "((x))") (p "(xyz)") (p "()") (p "x)") (p "xyz)") (p "x))") (p "$eq") (p "Nil") (p "\\Some x.x")
+#_ = L (p "f x") (p "((x))") (p "(xyz)") (p "()") (p "x)") (p "xyz)") (p "x))") (p "$eq") (p "Nil") (p "\\Some x.x")
+_ = L (p "tryGetCurChar = \\Stream s iRef.(\\i.(\\1.Some(index s i)|0.None)(intSlt i ($strLen s)))($readRef iRef)")
