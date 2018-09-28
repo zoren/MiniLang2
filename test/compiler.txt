@@ -72,7 +72,7 @@ betweenCh = \c1.\p.\c2.between (ch c1) p (ch c2)
 parens = \p.betweenCh '(' p ')'
 qchar = between (char ''') (predCh (const True)) (char ''')
 pconst = choice (pmap (\s.CInt s) decimal) (choice (pmap CAtom upperId) (choice (pmap CString qstring) (pmap CChar qchar)))
-ppatternAtom = choice (pmap (const PWildcard) (char '_')) (choice (pmap PConstant pconst) (pmap PVariable lowerId))
+ppatternAtom = choice (pmap (const PWildcard) (ch '_')) (choice (pmap PConstant pconst) (pmap PVariable lowerId))
 ppattern1 = mkRec\rec.choice ppatternAtom (pmap PParenthesis (parens (rec U)))
 ppattern = pcomb PApply ppattern1
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
@@ -83,4 +83,4 @@ pdecls = sepBy1 pdecl (many1 (char '\n'))
 parser = pdecls
 p = \str.parser (mkStream str)
 #_ = L (p "f x") (p "((x))") (p "(xyz)") (p "()") (p "x)") (p "xyz)") (p "x))") (p "$eq") (p "Nil") (p "\\Some x.x")
-_ = L (p "x = \"abc\"\ny = 5")
+_ = L (p "f = \\ _ . 5")
