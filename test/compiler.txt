@@ -12,9 +12,10 @@ index = curry $index
 subString = \s.\start.\length.$subString(T3 s start length)
 intSlt = curry $intSlt
 intSle = curry $intSle
+intEq = curry $intEq
 writeRef = curry $writeRef
 
-intEq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)($intEq(T i1 i2))
+intEq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)(intEq i1 i2)
 intLteq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)(intSle i1 i2)
 succ = add 1
 
@@ -27,8 +28,7 @@ isLowerTF = mkTF isLower
 isUpper = isInRange 'A' 'Z'
 isUpperTF = mkTF isUpper
 or = \True.const True|False.id
-isAlphaNum = \c.or (isUpperTF c) (or (isLowerTF c) (isDigitTF c))
-isNotQuote = \'"'.(\t.\f.f)|_.(\t.\f.t)
+isAlphaNumTF = \c.or (isUpperTF c) (or (isLowerTF c) (isDigitTF c))
 
 scan = \s.\pred.$fix\rec.\i.pred(index s i)(\_.rec(succ i))(\_.i)U
 strfoldl = \f.\s.$fix\rec.\acc.\i.intEq i ($strLen s) (\_.acc)(\_.rec (f acc (index s i)) (succ i)) U
@@ -40,7 +40,6 @@ seq = \p1.\p2.\comb.\s.(\None.None|Some v1.(\None.None|Some v2.Some(comb v1 v2))
 choice = \p1.\p2.\s.(\None.p2 s|sv1.sv1)(p1 s)
 between = \first.\middle.\end.seq first (seq middle end const) ignore
 pmap = \f.\p.\s.mapMaybe f (p s)
-
 
 mkStream = \s.Stream s ($newRef 0)
 tryGetCurChar = \Stream s iRef.(\i.(\1.Some(index s i)|0.None)(intSlt i ($strLen s)))($readRef iRef)
@@ -60,14 +59,14 @@ pred1 = \pred.\s.(\Some True.Some(advance 1 s)|_.None)(mapMaybe pred (tryGetCurC
 predCh = \pred.\s.mapMaybe(\i.index (getString s)(sub i 1))(pred1 pred s)
 wordCont = \firstPred.\followPred.\f.\s.seq (pred1 firstPred) (manyI followPred) f s
 word = \firstPred.\followPred.\s.seq (pred1 firstPred) (manyI followPred) (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) s
-upperId = word isUpperTF isAlphaNum
-lowerId = word isLowerTF isAlphaNum
+upperId = word isUpperTF isAlphaNumTF
+lowerId = word isLowerTF isAlphaNumTF
 word1 = \p.word p p
 lex = \p.seq (manyI (\' '.True|_.False)) p ignore
 decimal = lex (pmap stringToInt (word1 isDigitTF))
 qstring = \s.wordCont (\'\"'.True|_.False) (\'\"'.False|_.True) (\fc.\l.subString (getString s) fc l) s
 char = \c.pred1(\pc.intEq($ord pc)($ord c) True False)
-pprim = seq (char '$') (word1 isAlphaNum) ignore
+pprim = seq (char '$') (word1 isAlphaNumTF) ignore
 ch = \c.lex (char c)
 betweenCh = \c1.\p.\c2.between (ch c1) p (ch c2)
 parens = \p.betweenCh '(' p ')'
