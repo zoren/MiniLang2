@@ -57,20 +57,20 @@ pcomb = \ctor.\p.pmap(\l.foldl1 ctor l)(many1 p)
 manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance 1 s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
 pred1 = \pred.\s.(\Some True.Some(advance 1 s)|_.None)(mapMaybe pred (tryGetCurChar s))
 predCh = \pred.\s.mapMaybe(\i.index (getString s)(sub i 1))(pred1 pred s)
-wordCont = \firstPred.\followPred.\f.\s.seq (pred1 firstPred) (manyI followPred) f s
 word = \firstPred.\followPred.\s.seq (pred1 firstPred) (manyI followPred) (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) s
+manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance 1 s)(r U)|_.Some (T start (getIndex s)))(mapMaybe pred (tryGetCurChar s)))(getIndex s) U
 upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
 word1 = \p.word p p
 lex = \p.psnd (manyI (\' '.True|_.False)) p
 decimal = lex (pmap stringToInt (word1 isDigit))
-qstring = \s.wordCont (\'\"'.True|_.False) (\'\"'.False|_.True) (\fc.\l.subString (getString s) fc l) s
 char = \c.pred1(\pc.intEq($ord pc)($ord c))
+qstring = between (char '\"') (manyPred (\'\"'.False|_.True)) (char '\"')
 pprim = psnd (char '$') (word1 isAlphaNum)
 ch = \c.lex (char c)
 betweenCh = \c1.\p.\c2.between (ch c1) p (ch c2)
 parens = \p.betweenCh '(' p ')'
-qchar = betweenCh ''' (predCh (const True)) '''
+qchar = between (char ''') (predCh (const True)) (char ''')
 pconst = choice (pmap (\s.CInt s) decimal) (choice (pmap CAtom upperId) (choice (pmap CString qstring) (pmap CChar qchar)))
 ppatternAtom = choice (pmap (const PWildcard) (char '_')) (choice (pmap PConstant pconst) (pmap PVariable lowerId))
 ppattern1 = mkRec\rec.choice ppatternAtom (pmap PParenthesis (parens (rec U)))
@@ -78,7 +78,9 @@ ppattern = pcomb PApply ppattern1
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
 pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq ppattern (psnd (ch '.') (rec U)) T) (ch '|'))))))
 pdecl = seq ppattern (psnd (ch '=') pexp) Decl
-parser = pdecl
+pdecls = sepBy1 pdecl (many1 (char '\n'))
+
+parser = pdecls
 p = \str.parser (mkStream str)
 #_ = L (p "f x") (p "((x))") (p "(xyz)") (p "()") (p "x)") (p "xyz)") (p "x))") (p "$eq") (p "Nil") (p "\\Some x.x")
-_ = L (p "tryGetCurChar = \\Stream s iRef.(\\i.(\\1.Some(index s i)|0.None)(intSlt i ($strLen s)))($readRef iRef)")
+_ = L (p "x = \"abc\"\ny = 5")
