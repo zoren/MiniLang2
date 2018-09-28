@@ -61,9 +61,11 @@ manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance s)(r U)|_.Some 
 upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
 word1 = \p.word p p
-lex = \p.psnd (manyI (\' '.True|_.False)) p
-decimal = lex (pmap stringToInt (word1 isDigit))
 char = \c.pred1(\pc.intEq($ord pc)($ord c))
+comment = seq (pred1 (\'#'.True|_.False)) (manyPred (\'\n'.False|_.True)) T
+space = seq (manyI (\' '.True|_.False)) (many comment) T
+lex = \p.psnd space p
+decimal = lex (pmap stringToInt (word1 isDigit))
 qstring = between (char '\"') (manyPred (\'\"'.False|_.True)) (char '\"')
 pprim = psnd (char '$') (word1 isAlphaNum)
 ch = \c.lex (char c)
@@ -77,9 +79,9 @@ ppattern = pcomb PApply ppattern1
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
 pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq ppattern (psnd (ch '.') (rec U)) T) (ch '|'))))))
 pdecl = seq ppattern (psnd (ch '=') pexp) Decl
-pdecls = sepBy1 pdecl (many1 (char '\n'))
+pdecls = sepBy1 pdecl (many1 (seq (many comment) (char '\n') T))
 
 parser = pdecls
 p = \str.parser (mkStream str)
 #_ = L (p "f x") (p "((x))") (p "(xyz)") (p "()") (p "x)") (p "xyz)") (p "x))") (p "$eq") (p "Nil") (p "\\Some x.x")
-_ = L (p "f = \\ _ . 5")
+_ = L (p "x = f # 5\n#y = f 5\nz=5")
