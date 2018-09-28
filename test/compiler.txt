@@ -15,18 +15,20 @@ intSle = curry $intSle
 intEq = curry $intEq
 writeRef = curry $writeRef
 
-intEq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)(intEq i1 i2)
-intLteq = \i1.\i2.\vt.\vf.(\0.vf|1.vt)(intSle i1 i2)
+intEq = \i1.\i2.(\0.False|1.True)(intEq i1 i2)
+intLteq = \i1.\i2.(\0.False|1.True)(intSle i1 i2)
 succ = add 1
 
-isInRange = \start.\end.\c.intLteq ($ord start) ($ord c) (intLteq ($ord c) ($ord end) True False) False
+or = \True.const True|False.id
+and = \False.const False|True.id
+
+isInRange = \start.\end.\c.and(intLteq ($ord start) ($ord c)) (intLteq ($ord c) ($ord end))
 isDigit = isInRange '0' '9'
 isLower = isInRange 'a' 'z'
 isUpper = isInRange 'A' 'Z'
-or = \True.const True|False.id
 isAlphaNum = \c.or (isUpper c) (or (isLower c) (isDigit c))
 
-strfoldl = \f.\s.$fix\rec.\acc.\i.intEq i ($strLen s) (\_.acc)(\_.rec (f acc (index s i)) (succ i)) U
+strfoldl = \f.\s.$fix\rec.\acc.\i.(\True.acc|False.rec (f acc (index s i)) (succ i))(intEq i ($strLen s))
 foldl = \f.$fix\rec.\acc.\Nil.acc|Cons x xs.rec (f acc x) xs
 foldl1 = \f.\Cons x xs.foldl f x xs
 stringToInt = \s.strfoldl (\cur.\char.add (mult 10 cur) (sub ($ord char) ($ord '0'))) s 0 0
@@ -63,7 +65,7 @@ word1 = \p.word p p
 lex = \p.psnd (manyI (\' '.True|_.False)) p
 decimal = lex (pmap stringToInt (word1 isDigit))
 qstring = \s.wordCont (\'\"'.True|_.False) (\'\"'.False|_.True) (\fc.\l.subString (getString s) fc l) s
-char = \c.pred1(\pc.intEq($ord pc)($ord c) True False)
+char = \c.pred1(\pc.intEq($ord pc)($ord c))
 pprim = psnd (char '$') (word1 isAlphaNum)
 ch = \c.lex (char c)
 betweenCh = \c1.\p.\c2.between (ch c1) p (ch c2)
