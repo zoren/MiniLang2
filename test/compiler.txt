@@ -80,7 +80,8 @@ pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap
 pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq Case ppattern (psnd (ch '.') (rec U))) (ch '|'))))))
 pdecl = seq Decl ppattern (psnd (ch '=') pexp)
 pdecls = sepBy1 pdecl (many1 (seq T (many comment) (char '\n')))
+eof = \s.(\False.None|True.Some U)(intEq (getIndex s) ($strLen (getString s)))
 
-parser = pdecls
+parser = pfst pdecls eof
 p = \str.parser (mkStream str)
 _ = p ($readFile "test/compiler.txt")
