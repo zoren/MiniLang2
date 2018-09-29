@@ -31,11 +31,11 @@ foldl = \f.$fix\rec.\acc.\Nil.acc|Cons x xs.rec (f acc x) xs
 foldl1 = \f.\Cons x xs.foldl f x xs
 stringToInt = \s.strfoldl (\cur.\char.add (mult 10 cur) (sub ($ord char) ($ord '0'))) s 0 0
 mapMaybe = \f.\None.None|Some x.Some(f x)
-seq = \p1.\p2.\comb.\s.(\None.None|Some v1.(\None.None|Some v2.Some(comb v1 v2))(p2 s))(p1 s)
+seq = \comb.\p1.\p2.\s.(\None.None|Some v1.(\None.None|Some v2.Some(comb v1 v2))(p2 s))(p1 s)
 choice = \p1.\p2.\s.(\None.p2 s|sv1.sv1)(p1 s)
 
-pfst = \p1.\p2.seq p1 p2 const
-psnd = \p1.\p2.seq p1 p2 ignore
+pfst = seq const
+psnd = seq ignore
 between = \first.\middle.\end.psnd first (pfst middle end)
 pmap = \f.\p.\s.mapMaybe f (p s)
 
@@ -47,22 +47,22 @@ getIndex = \Stream _ iRef.$readRef iRef
 getString = \Stream s _.s
 
 mkRec = $fix\rec.\recCtor.\s.(\p.p s)(recCtor (\_.rec recCtor))
-many = \p.mkRec\rec.choice (seq p (rec U) Cons) (const (Some Nil))
-many1 = \p.seq p (many p) Cons
-sepBy1 = \p.\sep.seq p (many (psnd sep p)) Cons
+many = \p.mkRec\rec.choice (seq Cons p (rec U)) (const (Some Nil))
+many1 = \p.seq Cons p (many p)
+sepBy1 = \p.\sep.seq Cons p (many (psnd sep p))
 pcomb = \ctor.\p.pmap(\l.foldl1 ctor l)(many1 p)
 
 manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
 pred1 = \pred.\s.(\Some True.Some(advance s)|_.None)(mapMaybe pred (tryGetCurChar s))
 predCh = \pred.\s.mapMaybe(\i.index (getString s)(sub i 1))(pred1 pred s)
-word = \firstPred.\followPred.\s.seq (pred1 firstPred) (manyI followPred) (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) s
+word = \firstPred.\followPred.\s.seq (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) (pred1 firstPred) (manyI followPred) s
 manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance s)(r U)|_.Some (subString (getString s) start (sub (getIndex s) start)))(mapMaybe pred (tryGetCurChar s)))(getIndex s) U
 upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
 word1 = \p.word p p
 char = \c.pred1(\pc.intEq($ord pc)($ord c))
-comment = seq (pred1 (\'#'.True|_.False)) (manyPred (\'\n'.False|_.True)) T
-space = seq (manyI (\' '.True|_.False)) (many comment) T
+comment = seq T (pred1 (\'#'.True|_.False)) (manyPred (\'\n'.False|_.True))
+space = seq T (manyI (\' '.True|_.False)) (many comment)
 lex = \p.psnd space p
 decimal = lex (pmap stringToInt (word1 isDigit))
 qstring = between (char '\"') (manyPred (\'\"'.False|_.True)) (char '\"')
@@ -77,9 +77,9 @@ ppatternAtom = choice (pmap (const PWildcard) (ch '_')) (choice (pmap PConstant 
 ppattern1 = mkRec\rec.choice ppatternAtom (pmap PParenthesis (parens (rec U)))
 ppattern = pcomb PApply ppattern1
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
-pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq ppattern (psnd (ch '.') (rec U)) Case) (ch '|'))))))
-pdecl = seq ppattern (psnd (ch '=') pexp) Decl
-pdecls = sepBy1 pdecl (many1 (seq (many comment) (char '\n') T))
+pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq Case ppattern (psnd (ch '.') (rec U))) (ch '|'))))))
+pdecl = seq Decl ppattern (psnd (ch '=') pexp)
+pdecls = sepBy1 pdecl (many1 (seq T (many comment) (char '\n')))
 
 parser = pdecls
 p = \str.parser (mkStream str)
