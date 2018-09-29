@@ -67,13 +67,6 @@ primMap name = case name of
         (VConstant (CAtom "T3") `VApply` (VConstant (CString s)) `VApply` (VConstant (CInt start)) `VApply` (VConstant (CInt len))) ->
           rvc $ CString $ T.take len $ T.drop start s
         _ -> error $ "subString unexpected arg: " ++ show arg
-  "readFile" ->
-    \arg ->
-      case arg of
-        (VConstant (CString filePath)) -> do
-          content <- readFile $ T.unpack filePath
-          rvc $ CString content
-        _ -> error $ "strLen unexpected arg: " ++ show arg
   "chr" ->
     \(VConstant(CInt c)) -> rvc $ CChar $ chr c
   "ord" ->
@@ -108,6 +101,19 @@ primMap name = case name of
       case arg of
         (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 < i2
         _ -> error $ "intSlt unexpected arg: " ++ show arg
+  "charEq" ->
+    \arg ->
+      case arg of
+        (VConstant (CAtom "T") `VApply` VConstant (CChar c1) `VApply` VConstant (CChar c2)) -> retBool $ c1 == c2
+        _ -> error $ "charEq unexpected arg: " ++ show arg
+  -- unsafe stuff
+  "readFile" ->
+    \arg ->
+      case arg of
+        (VConstant (CString filePath)) -> do
+          content <- readFile $ T.unpack filePath
+          rvc $ CString content
+        _ -> error $ "strLen unexpected arg: " ++ show arg
   "newRef" -> \arg -> VRef <$> newIORef arg
   "readRef" -> \arg ->
       case arg of
@@ -119,7 +125,7 @@ primMap name = case name of
           writeIORef r newValue
           return newValue
         _ -> error $ "writeRef unexpected arg: " ++ show arg
-  _ -> error $ "prim not known" ++ show name
+  _ -> error $ "prim not known: " ++ show name
   where
     rvc = return . VConstant
     retBool b = rvc $ CInt $ if b then 1 else 0

@@ -10,13 +10,13 @@ mult = curry $mult
 index = curry $index
 subString = \s.\start.\length.$subString(T3 s start length)
 intSlt = curry $intSlt
-intSle = curry $intSle
-intEq = curry $intEq
 writeRef = curry $writeRef
 
-intEq = \i1.\i2.(\0.False|1.True)(intEq i1 i2)
-intLteq = \i1.\i2.(\0.False|1.True)(intSle i1 i2)
+intEq = \i1.\i2.(\0.False|1.True)(curry $intEq i1 i2)
+intLteq = \i1.\i2.(\0.False|1.True)(curry $intSle i1 i2)
+charEq = \c1.\c2.(\0.False|1.True)(curry $charEq c1 c2)
 
+not = \True.False|False.True
 or = \True.const True|False.id
 and = \False.const False|True.id
 
@@ -26,6 +26,7 @@ isLower = isInRange 'a' 'z'
 isUpper = isInRange 'A' 'Z'
 isAlphaNum = \c.or (isUpper c) (or (isLower c) (isDigit c))
 
+modify = \f.\ref.writeRef ref (f ($readRef ref))
 strfoldl = \f.\s.$fix\rec.\acc.\i.(\True.acc|False.rec (f acc (index s i)) (add 1 i))(intEq i ($strLen s))
 foldl = \f.$fix\rec.\acc.\Nil.acc|Cons x xs.rec (f acc x) xs
 foldl1 = \f.\Cons x xs.foldl f x xs
@@ -41,7 +42,6 @@ pmap = \f.\p.\s.mapMaybe f (p s)
 
 mkStream = \s.Stream s ($newRef 0)
 tryGetCurChar = \Stream s iRef.(\i.(\1.Some(index s i)|0.None)(intSlt i ($strLen s)))($readRef iRef)
-modify = \f.\ref.writeRef ref (f ($readRef ref))
 advance = \Stream _ iRef.modify (add 1) iRef
 getIndex = \Stream _ iRef.$readRef iRef
 getString = \Stream s _.s
@@ -61,11 +61,11 @@ upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
 word1 = \p.word p p
 char = \c.pred1(\pc.intEq($ord pc)($ord c))
-comment = seq T (pred1 (\'#'.True|_.False)) (manyPred (\'\n'.False|_.True))
-space = seq T (manyI (\' '.True|_.False)) (many comment)
+comment = seq T (pred1 (charEq '#')) (manyPred (\c.not(charEq '\n' c)))
+space = seq T (manyI (charEq ' ')) (many comment)
 lex = \p.psnd space p
 decimal = lex (pmap stringToInt (word1 isDigit))
-qstring = between (char '\"') (manyPred (\'\"'.False|_.True)) (char '\"')
+qstring = between (char '\"') (manyPred (\c.not(charEq '\"' c))) (char '\"')
 pprim = psnd (char '$') (word1 isAlphaNum)
 ch = \c.lex (char c)
 parens = \p.between (ch '(') p (ch ')')
