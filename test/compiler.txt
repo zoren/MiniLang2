@@ -84,5 +84,4 @@ pdecls = sepBy1 pdecl (many1 (seq (many comment) (char '\n') T))
 
 parser = pdecls
 p = \str.parser (mkStream str)
-#_ = L (p "f x") (p "((x))") (p "(xyz)") (p "()") (p "x)") (p "xyz)") (p "x))") (p "$eq") (p "Nil") (p "\\Some x.x")
-_ = L (p "x = f # 5\n#y = f 5\nz=5")
+_ = p ($readFile "test/compiler.txt")
