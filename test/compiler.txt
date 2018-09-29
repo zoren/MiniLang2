@@ -74,8 +74,7 @@ escape = \s.(\None.None|Some None.None|Some sc.ignore (advance s) sc)(mapMaybe e
 qchar = between (char ''') (choice (psnd (char '\\') escape) (predCh (const True))) (char ''')
 pconst = choice (pmap (\s.CInt s) decimal) (choice (pmap CAtom upperId) (choice (pmap CString qstring) (pmap CChar qchar)))
 ppatternAtom = choice (pmap (const PWildcard) (ch '_')) (choice (pmap PConstant pconst) (pmap PVariable lowerId))
-ppattern1 = mkRec\rec.choice ppatternAtom (pmap PParenthesis (parens (rec U)))
-ppattern = pcomb PApply ppattern1
+ppattern = mkRec\rec.pcomb PApply (choice ppatternAtom (pmap PParenthesis (parens (rec U))))
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
 pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq Case ppattern (psnd (ch '.') (rec U))) (ch '|'))))))
 pdecl = seq Decl ppattern (psnd (ch '=') pexp)
