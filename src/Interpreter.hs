@@ -11,7 +11,9 @@ import           Data.IORef
 import qualified Data.Map.Strict as Map
 import           Data.Maybe (fromMaybe)
 import qualified Data.Text as T
+import Data.Text.IO (readFile)
 import           Lang
+import Prelude hiding (readFile)
 
 type Environment c v = Map.Map v (Value c v)
 data Value c v
@@ -65,6 +67,13 @@ primMap name = case name of
         (VConstant (CAtom "T3") `VApply` (VConstant (CString s)) `VApply` (VConstant (CInt start)) `VApply` (VConstant (CInt len))) ->
           rvc $ CString $ T.take len $ T.drop start s
         _ -> error $ "subString unexpected arg: " ++ show arg
+  "readFile" ->
+    \arg ->
+      case arg of
+        (VConstant (CString filePath)) -> do
+          content <- readFile $ T.unpack filePath
+          rvc $ CString content
+        _ -> error $ "strLen unexpected arg: " ++ show arg
   "chr" ->
     \(VConstant(CInt c)) -> rvc $ CChar $ chr c
   "ord" ->
