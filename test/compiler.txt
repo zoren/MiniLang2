@@ -77,7 +77,7 @@ ppatternAtom = choice (pmap (const PWildcard) (ch '_')) (choice (pmap PConstant 
 ppattern1 = mkRec\rec.choice ppatternAtom (pmap PParenthesis (parens (rec U)))
 ppattern = pcomb PApply ppattern1
 pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
-pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq ppattern (psnd (ch '.') (rec U)) T) (ch '|'))))))
+pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq ppattern (psnd (ch '.') (rec U)) Case) (ch '|'))))))
 pdecl = seq ppattern (psnd (ch '=') pexp) Decl
 pdecls = sepBy1 pdecl (many1 (seq (many comment) (char '\n') T))
 
