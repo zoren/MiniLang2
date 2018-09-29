@@ -33,7 +33,6 @@ foldl1 = \f.\Cons x xs.foldl f x xs
 stringToInt = \s.strfoldl (\cur.\char.add (mult 10 cur) (sub ($ord char) ($ord '0'))) s 0 0
 mapMaybe = \f.\None.None|Some x.Some(f x)
 seq = \comb.\p1.\p2.\s.(\None.None|Some v1.(\None.None|Some v2.Some(comb v1 v2))(p2 s))(p1 s)
-choice = \p1.\p2.\s.(\None.p2 s|sv1.sv1)(p1 s)
 
 pfst = seq const
 psnd = seq ignore
@@ -45,6 +44,9 @@ tryGetCurChar = \Stream s iRef.(\i.(\1.Some(index s i)|0.None)(intSlt i ($strLen
 advance = \Stream _ iRef.modify (add 1) iRef
 getIndex = \Stream _ iRef.$readRef iRef
 getString = \Stream s _.s
+setIndex = \newIndex.\Stream _ iRef.modify (const newIndex) iRef
+
+choice = \p1.\p2.\s.(\before.(\None.ignore(setIndex before s)(p2 s)|sv1.sv1)(p1 s))(getIndex s)
 
 mkRec = $fix\rec.\recCtor.\s.(\p.p s)(recCtor (\_.rec recCtor))
 many = \p.mkRec\rec.choice (seq Cons p (rec U)) (const (Some Nil))
@@ -61,11 +63,11 @@ word = \firstPred.\followPred.\s.seq (\fc.\e.subString (getString s) (sub fc 1) 
 manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance s)(r U)|_.Some (subString (getString s) start (sub (getIndex s) start)))(mapMaybe pred (tryGetCurChar s)))(getIndex s) U
 upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
-pprim = psnd (char '$') (word isAlphaNum isAlphaNum)
+primId = psnd (char '$') (word isAlphaNum isAlphaNum)
 comment = seq T (pred1 (charEq '#')) (manyPred (\c.not(charEq '\n' c)))
 space = seq T (manyI (charEq ' ')) (many comment)
 lex = psnd space
-decimal = lex (pmap stringToInt (word isDigit isDigit))
+decimal = pmap stringToInt (word isDigit isDigit)
 qstring = between (char '\"') (manyPred (\c.not(charEq '\"' c))) (char '\"')
 ch = \c.lex (char c)
 parens = \p.between (ch '(') p (ch ')')
@@ -73,14 +75,15 @@ escapef = \'n'.Some '\n'|'\\'.Some '\\'|'\"'.Some '\"'|_.None
 escape = \s.(\None.None|Some None.None|Some sc.ignore (advance s) sc)(mapMaybe escapef (tryGetCurChar s))
 qchar = between (char ''') (choice (psnd (char '\\') escape) (predCh (const True))) (char ''')
 pconst = choice (pmap (\s.CInt s) decimal) (choice (pmap CAtom upperId) (choice (pmap CString qstring) (pmap CChar qchar)))
-ppatternAtom = choice (pmap (const PWildcard) (ch '_')) (choice (pmap PConstant pconst) (pmap PVariable lowerId))
+ppatternAtom = lex (choice (pmap (const PWildcard) (ch '_')) (choice (pmap PConstant pconst) (pmap PVariable lowerId)))
 ppattern = mkRec\rec.pcomb PApply (choice ppatternAtom (pmap PParenthesis (parens (rec U))))
-pexpAtom = choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim pprim))
+pexpAtom = lex (choice (pmap EConstant pconst) (choice (pmap EVariable lowerId) (pmap EPrim primId)))
 pexp = mkRec\rec.pcomb EApply (choice pexpAtom (choice (pmap EParenthesis (parens (rec U))) (pmap ELambda (psnd (ch '\\') (sepBy1 (seq Case ppattern (psnd (ch '.') (rec U))) (ch '|'))))))
 pdecl = seq Decl ppattern (psnd (ch '=') pexp)
-pdecls = sepBy1 pdecl (many1 (seq T (many comment) (char '\n')))
+newline = seq T (many comment) (char '\n')
+pdecls = sepBy1 pdecl (many1 newline)
 eof = \s.(\False.None|True.Some U)(intEq (getIndex s) ($strLen (getString s)))
 
-parser = pfst pdecls eof
+parser = pfst pdecls (pfst (many newline) eof)
 p = \str.parser (mkStream str)
 _ = p ($readFile "test/compiler.txt")
