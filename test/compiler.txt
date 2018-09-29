@@ -1,4 +1,3 @@
-# compiler
 id = \x.x
 const = \a.\b.a
 ignore = \a.\b.b
