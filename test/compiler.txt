@@ -52,21 +52,21 @@ many1 = \p.seq Cons p (many p)
 sepBy1 = \p.\sep.seq Cons p (many (psnd sep p))
 pcomb = \ctor.\p.pmap(\l.foldl1 ctor l)(many1 p)
 
-manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
 pred1 = \pred.\s.(\Some True.Some(advance s)|_.None)(mapMaybe pred (tryGetCurChar s))
+char = \c.pred1(charEq c)
+
+manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
 predCh = \pred.\s.mapMaybe(\i.index (getString s)(sub i 1))(pred1 pred s)
 word = \firstPred.\followPred.\s.seq (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) (pred1 firstPred) (manyI followPred) s
 manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance s)(r U)|_.Some (subString (getString s) start (sub (getIndex s) start)))(mapMaybe pred (tryGetCurChar s)))(getIndex s) U
 upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
-word1 = \p.word p p
-char = \c.pred1(\pc.intEq($ord pc)($ord c))
+pprim = psnd (char '$') (word isAlphaNum isAlphaNum)
 comment = seq T (pred1 (charEq '#')) (manyPred (\c.not(charEq '\n' c)))
 space = seq T (manyI (charEq ' ')) (many comment)
-lex = \p.psnd space p
-decimal = lex (pmap stringToInt (word1 isDigit))
+lex = psnd space
+decimal = lex (pmap stringToInt (word isDigit isDigit))
 qstring = between (char '\"') (manyPred (\c.not(charEq '\"' c))) (char '\"')
-pprim = psnd (char '$') (word1 isAlphaNum)
 ch = \c.lex (char c)
 parens = \p.between (ch '(') p (ch ')')
 escapef = \'n'.Some '\n'|'\\'.Some '\\'|'\"'.Some '\"'|_.None
