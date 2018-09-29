@@ -57,10 +57,13 @@ pcomb = \ctor.\p.pmap(\l.foldl1 ctor l)(many1 p)
 pred1 = \pred.\s.(\Some True.Some(advance s)|_.None)(mapMaybe pred (tryGetCurChar s))
 char = \c.pred1(charEq c)
 
-manyI = \pred.\s.Some(($fix\r.\_.(\Some True.ignore(advance s)(r U)|_.getIndex s)(mapMaybe pred (tryGetCurChar s)))U)
+ppos = \s.Some (getIndex s)
+manyRange = \p.\comb.\s.seq (comb (getString s)) ppos (mkRec\rec.choice (psnd p (rec U)) ppos) s
+
+manyI = \pred.manyRange(pred1 pred)(\_.\_.\end.end)
 predCh = \pred.\s.mapMaybe(\i.index (getString s)(sub i 1))(pred1 pred s)
 word = \firstPred.\followPred.\s.seq (\fc.\e.subString (getString s) (sub fc 1) (add 1 (sub e fc))) (pred1 firstPred) (manyI followPred) s
-manyPred = \pred.\s.(\start.$fix\r.\_.(\Some True.ignore(advance s)(r U)|_.Some (subString (getString s) start (sub (getIndex s) start)))(mapMaybe pred (tryGetCurChar s)))(getIndex s) U
+manyPred = \pred.manyRange(pred1 pred)(\str.\start.\end.subString str start (sub end start))
 upperId = word isUpper isAlphaNum
 lowerId = word isLower isAlphaNum
 primId = psnd (char '$') (word isAlphaNum isAlphaNum)
