@@ -39,13 +39,13 @@ lexeme :: Parser a -> Parser a
 lexeme = L.lexeme sc
 
 lowerId :: Parser Identifier
-lowerId = lexeme (T.cons <$> lowerChar <*> trailingChars)
+lowerId = T.cons <$> lowerChar <*> trailingChars
 
 upperId :: Parser Identifier
-upperId = lexeme (T.cons <$> upperChar <*> trailingChars)
+upperId = T.cons <$> upperChar <*> trailingChars
 
 primId :: Parser Identifier
-primId = lexeme (char '$' *> trailingChars)
+primId = char '$' *> trailingChars
 
 sym :: Char -> Parser ()
 sym = void . lexeme . char
@@ -59,15 +59,15 @@ pcomb f pelem = foldl1 f <$> some pelem
 pconstant :: Parser Constant
 pconstant =
   choice
-  [ CInt <$> lexeme L.decimal
+  [ CInt <$> L.decimal
   , CAtom <$> upperId
-  , CString . T.pack <$> lexeme (char '"' >> manyTill L.charLiteral (char '"'))
-  , CChar <$> lexeme (char '\'' *> L.charLiteral <* char '\'')
+  , CString . T.pack <$> (char '"' >> manyTill L.charLiteral (char '"'))
+  , CChar <$> (char '\'' *> L.charLiteral <* char '\'')
   ]
 
 ppattern :: Parser Pattern
 ppattern =
-  pcomb PApply $ choice
+  pcomb PApply $ lexeme $ choice
   [ PWildcard <$ sym '_'
   , PConstant <$> pconstant
   , PVariable <$> lowerId
@@ -76,7 +76,7 @@ ppattern =
 
 pexp :: Parser Expression
 pexp =
-  pcomb EApply $ choice
+  pcomb EApply $ lexeme $ choice
   [ EConstant <$> pconstant
   , EVariable <$> lowerId
   , EPrim <$> primId
@@ -88,4 +88,4 @@ pdecl :: Parser Declaration
 pdecl = ValueDeclaration <$> ppattern <* sym '=' <*> pexp
 
 pprog :: Parser Program
-pprog = (many $ nonIndented pdecl <* scn) <* eof
+pprog = many $ nonIndented pdecl <* scn <* eof
