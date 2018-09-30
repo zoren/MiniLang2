@@ -44,88 +44,31 @@ instance (Show c, Show v) => Show (Value c v) where
       VRef {} -> "<ref>"
 
 primMap :: (Ord v, Show v) => T.Text -> Value Constant v -> IO (Value Constant v)
-primMap name = case name of
-  "fix" -> mfix . apply
-  "concat" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CString s1) `VApply` VConstant (CString s2)) -> rvc $ CString $ T.append s1 s2
-        _ -> error $ "concat unexpected arg: " ++ show arg
-  "strLen" ->
-    \arg ->
-      case arg of
-        (VConstant(CString s)) -> rvc $ CInt $ T.length s
-        _ -> error $ "strLen unexpected arg: " ++ show arg
-  "index" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CString s) `VApply` VConstant (CInt i)) -> rvc $ CChar $ T.index s i
-        _ -> error $ "concat unexpected arg: " ++ show arg
-  "subString" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T3") `VApply` VConstant (CString s) `VApply` VConstant (CInt start) `VApply` VConstant (CInt len)) ->
-          rvc $ CString $ T.take len $ T.drop start s
-        _ -> error $ "subString unexpected arg: " ++ show arg
-  "chr" ->
-    \(VConstant(CInt c)) -> rvc $ CChar $ chr c
-  "ord" ->
-    \(VConstant(CChar c)) -> rvc $ CInt $ ord c
-  "add" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 + i2
-        _ -> error $ "add unexpected arg: " ++ show arg
-  "sub" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 - i2
-        _ -> error $ "sub unexpected arg: " ++ show arg
-  "mult" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 * i2
-        _ -> error $ "mult unexpected arg: " ++ show arg
-  "intEq" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 == i2
-        _ -> error $ "intEq unexpected arg: " ++ show arg
-  "intSle" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 <= i2
-        _ -> error $ "intSle unexpected arg: " ++ show arg
-  "intSlt" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 < i2
-        _ -> error $ "intSlt unexpected arg: " ++ show arg
-  "charEq" ->
-    \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VConstant (CChar c1) `VApply` VConstant (CChar c2)) -> retBool $ c1 == c2
-        _ -> error $ "charEq unexpected arg: " ++ show arg
+primMap name arg = case (name, arg) of
+  ("fix", _) -> mfix $ apply arg
+  ("concat", VConstant (CAtom "T") `VApply` VConstant (CString s1) `VApply` VConstant (CString s2)) ->
+    rvc $ CString $ T.append s1 s2
+  ("strLen", VConstant(CString s)) -> rvc $ CInt $ T.length s
+  ("index", VConstant (CAtom "T") `VApply` VConstant (CString s) `VApply` VConstant (CInt i)) -> rvc $ CChar $ T.index s i
+  ("subString", VConstant (CAtom "T3") `VApply` VConstant (CString s) `VApply` VConstant (CInt start) `VApply` VConstant (CInt len)) ->
+    rvc $ CString $ T.take len $ T.drop start s
+  ("chr", VConstant(CInt c)) -> rvc $ CChar $ chr c
+  ("ord", VConstant(CChar c)) -> rvc $ CInt $ ord c
+  ("add", VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 + i2
+  ("sub", VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 - i2
+  ("mult", VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 * i2
+  ("intEq", VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 == i2
+  ("intSle", VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 <= i2
+  ("intSlt", VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 < i2
+  ("charEq", VConstant (CAtom "T") `VApply` VConstant (CChar c1) `VApply` VConstant (CChar c2)) -> retBool $ c1 == c2
   -- unsafe stuff
-  "readFile" ->
-    \arg ->
-      case arg of
-        (VConstant (CString filePath)) -> do
-          content <- readFile $ T.unpack filePath
-          rvc $ CString content
-        _ -> error $ "strLen unexpected arg: " ++ show arg
-  "newRef" -> fmap VRef newIORef
-  "readRef" -> \arg ->
-      case arg of
-        VRef r -> readIORef r
-        _ -> error $ "readRef unexpected arg: " ++ show arg
-  "writeRef" -> \arg ->
-      case arg of
-        (VConstant (CAtom "T") `VApply` VRef r `VApply` newValue) -> do
-          writeIORef r newValue
-          return newValue
-        _ -> error $ "writeRef unexpected arg: " ++ show arg
-  _ -> error $ "prim not known: " ++ show name
+  ("readFile", VConstant (CString filePath)) -> VConstant . CString <$> readFile (T.unpack filePath)
+  ("newRef", _) -> VRef <$> newIORef arg
+  ("readRef", VRef r) -> readIORef r
+  ("writeRef", VConstant (CAtom "T") `VApply` VRef r `VApply` newValue) -> do
+    writeIORef r newValue
+    return newValue
+  _ -> error $ "prim not known: " ++ show name ++ " " ++ show arg
   where
     rvc = return . VConstant
     retBool b = rvc $ CInt $ if b then 1 else 0
