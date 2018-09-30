@@ -71,7 +71,7 @@ programTests =
     , t "x = A   y" [pv "x" `vd` (ec "A" `EApply` ev "y") ]
     , t "f = \\x.x" [pv "f" `vd` ELambda [Case (pv "x") (ev "x")]]
     , t "f = \\Nil.None    |Cons x _.Some x" [pv "f" `vd` ELambda [Case (pc "Nil") (ec "None")
-                                                                  ,Case (pc "Cons" `papp` pv "x" `papp` PWildcard) ((ec "Some" `eapp` ev "x"))]]
+                                                                  ,Case (pc "Cons" `papp` pv "x" `papp` PWildcard) (ec "Some" `eapp` ev "x")]]
     ]
 
 evalExpTests =

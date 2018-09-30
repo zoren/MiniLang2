@@ -49,7 +49,7 @@ primMap name = case name of
   "concat" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CString s1)) `VApply` (VConstant (CString s2))) -> rvc $ CString $ T.append s1 s2
+        (VConstant (CAtom "T") `VApply` VConstant (CString s1) `VApply` VConstant (CString s2)) -> rvc $ CString $ T.append s1 s2
         _ -> error $ "concat unexpected arg: " ++ show arg
   "strLen" ->
     \arg ->
@@ -59,12 +59,12 @@ primMap name = case name of
   "index" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CString s)) `VApply` (VConstant (CInt i))) -> rvc $ CChar $ T.index s i
+        (VConstant (CAtom "T") `VApply` VConstant (CString s) `VApply` VConstant (CInt i)) -> rvc $ CChar $ T.index s i
         _ -> error $ "concat unexpected arg: " ++ show arg
   "subString" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T3") `VApply` (VConstant (CString s)) `VApply` (VConstant (CInt start)) `VApply` (VConstant (CInt len))) ->
+        (VConstant (CAtom "T3") `VApply` VConstant (CString s) `VApply` VConstant (CInt start) `VApply` VConstant (CInt len)) ->
           rvc $ CString $ T.take len $ T.drop start s
         _ -> error $ "subString unexpected arg: " ++ show arg
   "chr" ->
@@ -74,32 +74,32 @@ primMap name = case name of
   "add" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> rvc $ CInt $ i1 + i2
+        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 + i2
         _ -> error $ "add unexpected arg: " ++ show arg
   "sub" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> rvc $ CInt $ i1 - i2
+        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 - i2
         _ -> error $ "sub unexpected arg: " ++ show arg
   "mult" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> rvc $ CInt $ i1 * i2
+        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> rvc $ CInt $ i1 * i2
         _ -> error $ "mult unexpected arg: " ++ show arg
   "intEq" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 == i2
+        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 == i2
         _ -> error $ "intEq unexpected arg: " ++ show arg
   "intSle" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 <= i2
+        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 <= i2
         _ -> error $ "intSle unexpected arg: " ++ show arg
   "intSlt" ->
     \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VConstant (CInt i1)) `VApply` (VConstant (CInt i2))) -> retBool $ i1 < i2
+        (VConstant (CAtom "T") `VApply` VConstant (CInt i1) `VApply` VConstant (CInt i2)) -> retBool $ i1 < i2
         _ -> error $ "intSlt unexpected arg: " ++ show arg
   "charEq" ->
     \arg ->
@@ -114,14 +114,14 @@ primMap name = case name of
           content <- readFile $ T.unpack filePath
           rvc $ CString content
         _ -> error $ "strLen unexpected arg: " ++ show arg
-  "newRef" -> \arg -> VRef <$> newIORef arg
+  "newRef" -> fmap VRef newIORef
   "readRef" -> \arg ->
       case arg of
         VRef r -> readIORef r
         _ -> error $ "readRef unexpected arg: " ++ show arg
   "writeRef" -> \arg ->
       case arg of
-        (VConstant (CAtom "T") `VApply` (VRef r) `VApply` newValue) -> do
+        (VConstant (CAtom "T") `VApply` VRef r `VApply` newValue) -> do
           writeIORef r newValue
           return newValue
         _ -> error $ "writeRef unexpected arg: " ++ show arg
